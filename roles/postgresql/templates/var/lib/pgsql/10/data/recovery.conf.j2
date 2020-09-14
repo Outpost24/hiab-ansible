@@ -1,0 +1,5 @@
+standby_mode = 'on'
+primary_conninfo = 'host={{ dbmasterip }} user={{ dbreplicationuser }} application_name={{ dbapplicationname }} connect_timeout=2'
+recovery_target_timeline = 'latest'
+primary_slot_name = {{ dbslotname }}
+restore_command = '/usr/bin/barman-wal-restore {{ dbbackupip }} {{ dbmasterip }} %f %p'

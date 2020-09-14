@@ -1,0 +1,35 @@
+# {{ ansible_managed }}
+# settings for verifying incoming connections
+identityAuth:
+  # services that are allowed to connect directly
+  allowedServices:
+{% for service in clavem.allowed_services %}
+    - {{ service }}
+{% endfor %}
+  # the max allowed path length from trust anchors
+  maxPathLength: 2
+  # the root certificates to use as trust for incoming connections
+  roots:
+    - {{ tls_certificates_base_path }}/{{ libellum.client_ca | default('outscan.crt') }}
+
+# directory where certificates and keys used for shared encryption
+certificates: {{ tls_certificates_base_path }}/clavem
+keys: {{ tls_keys_base_path }}/clavem
+passphrase: {{ vault_clavem_encryption_key_passphrase | to_nice_json }}
+
+# the address to listen on
+listen: {{ clavem.ip | default('0.0.0.0') }}:{{ clavem.port | default('5044') }}
+
+tls:
+  ciphersuites: {{ ssl_ciphers }}
+  ciphersuitesstrictsupported: null
+  curvepreferences:
+  - x25519
+  - secp256r1
+  - secp384r1
+  minversion: TLS1.2
+  clientauth: RequestClientCert
+  certificates:
+    - certificate: {{ tls_certificates_base_path }}/{{ libellum.cert }}
+      privatekey: {{ tls_keys_base_path }}/{{ libellum.key }}
+  clientca: {{ tls_certificates_base_path }}/{{ libellum.client_ca | default('outscan.crt') }}

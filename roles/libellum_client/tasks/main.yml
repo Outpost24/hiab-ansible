@@ -1,0 +1,122 @@
+- name: Install libellum via bootstrap
+  when: bootstrap is defined and bootstrap
+  block:
+  - name: Create temporaty RPM directory
+    check_mode: no
+    tempfile:
+      path: /root/
+      prefix: "ansible."
+      state: directory
+    register: tmpdir
+
+  - name: Copy RPMs
+    copy:
+      mode: 0600
+      src: bootstrap_rpms/
+      dest: "{{ tmpdir.path }}"
+
+  - name: Register copied files
+    find:
+      paths: "{{ tmpdir.path }}"
+      patterns: "*.rpm"
+    register: rpms
+
+  - name: Install RPMs # noqa 403
+    yum:
+      name: "{{ rpms.files | map(attribute='path') | list }}"
+      state: latest
+      disable_gpg_check: true
+
+  - name: Delete temporary RPM directory
+    check_mode: no
+    file:
+      path: "{{ tmpdir.path }}"
+      state: absent
+
+- name: Install Libellum
+  when: bootstrap is not defined or not bootstrap
+  package:
+    name: libellum
+    state: present
+
+- name: Create libellum config directory
+  file:
+    path: "/etc/libellum_{{ libellum.service }}.conf.d/"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Copy libellum config
+  template:
+    src: etc/libellum.conf.d/20-config.yml.j2
+    dest: "/etc/libellum_{{ libellum.service }}.conf.d/20-config.yml"
+    owner: root
+    group: root
+    mode: 0644
+
+- import_tasks: enroll.yml
+
+- name: Get client CA from libellum server
+  when: outscan.username is not defined
+  delegate_to: "{{ libellum.server_mgmt }}"
+  slurp:
+    src: "{{ tls_certificates_base_path }}/{{ libellum.client_ca }}"
+  register: libellum_client_ca
+
+- name: Push client CA to client
+  when: outscan.username is not defined
+  copy:
+    content: "{{ libellum_client_ca['content'] | b64decode }}"
+    dest: "{{ tls_certificates_base_path }}/{{ libellum.client_ca }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Get global certificate from libellum server
+  when: outscan.username is not defined
+  delegate_to: "{{ libellum.server_mgmt }}"
+  slurp:
+    src: "{{ tls_certificates_base_path }}/{{ global_root_certificate }}"
+  register: outpost24_global_crt
+
+- name: Copy global certificate
+  when: outscan.username is not defined
+  copy:
+    content: "{{ outpost24_global_crt['content'] | b64decode }}"
+    dest: "{{ tls_certificates_base_path }}/{{ global_root_certificate }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Push concatenated CA file
+  when: outscan.username is not defined
+  copy:
+    content: "{{ libellum_client_ca['content'] | b64decode }}{{ outpost24_global_crt['content'] | b64decode }}"
+    dest: "{{ tls_certificates_base_path }}/{{ repository_certificate }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Check if appliance.crt already exists and is a file
+  stat:
+    path: "{{ tls_certificates_base_path }}/appliance.crt"
+  register: app_crt
+
+- name: Check that link target exists
+  when: app_crt.stat.exists and app_crt.stat.islnk
+  stat:
+    path: "{{ app_crt.stat.lnk_target }}"
+  register: app_link_target
+
+- name: Create symlink from service certificate to appliance.crt
+  when: >
+    not app_crt.stat.exists or
+    ((app_link_target.skipped is not defined or not app_link_target.skipped) and
+    app_link_target.stat.exists and
+    (app_link_target.stat.path is regex('^' + tls_certificates_base_path + '\/.*\.crt$')))
+  file:
+    src: "{{ tls_certificates_base_path }}/{{ libellum.cert }}"
+    dest: "{{ tls_certificates_base_path }}/appliance.crt"
+    force: no
+    state: link

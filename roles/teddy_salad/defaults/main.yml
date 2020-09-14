@@ -1,0 +1,11 @@
+teddy_salad:
+  db:
+    type: postgres
+    sslmode: require
+  confdir: /etc/teddy-salad.conf.d/
+  allowed_services:
+    - HIAB_SCHEDULER
+    - HIAB_SCANNER
+  self_sign_code_signing: false
+  install: true
+  install_pg: true

@@ -1,0 +1,9 @@
+libellum:
+  cert: "appliance.crt"
+  key: "appliance.key"
+  user: root
+  client_ca: outscan.crt
+  root_ca: outscan.crt
+  passphrase: null
+global_root_certificate: outpost24_global.crt
+repository_certificate: outpost24_repo.crt

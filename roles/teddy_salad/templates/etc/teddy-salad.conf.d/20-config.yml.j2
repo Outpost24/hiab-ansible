@@ -1,0 +1,84 @@
+# set the database to be used
+database:
+  # max number of connections. the code works with as little as one but can be increased for performance
+  maxopenconns: {{ teddy_salad.db.conns | default(10) }}
+  # the type of database sqlite3 or postgres
+  type: {{ teddy_salad.db.type }}
+  # the uri / connect string to use when connecting to the database
+{% if teddy_salad.db.type == "postgres" %}
+  uri: postgres://teddy-salad:{{ vault_teddy_salad_db_password }}@{{ teddy_salad.db.host | default('127.0.0.1') }}:{{ teddy_salad.db.port | default('5432') }}/teddy-salad?sslmode={{ teddy_salad.db.sslmode | default('disable') }}
+{% endif %}
+
+# settings for verifying incoming connections
+clientAuth:
+  # services that are allowed to connect directly
+  allowedServices:
+{% for service in teddy_salad.allowed_services %}
+    - {{ service }}
+{% endfor %}
+  # the root certificates to use as trust for incoming connections
+  roots:
+  - {{ tls_certificates_base_path }}/{{ libellum.client_ca }}
+
+# store url
+store:
+  s3:
+    endpoint: {{ teddy_salad.storage.endpoint }}
+    region: {{ teddy_salad.storage.region }}
+    accessKeyId: {{ vault_teddy_salad_storage_id }}
+    secretAccessKey: {{ vault_teddy_salad_storage_key }}
+    lifecycle:
+      rules:
+        - expiration:
+            days: 30
+          filter: {}
+          status: Enabled
+
+# default agentconfig
+defaultAgentConfig:
+  frequency: 10m
+  apis:
+{% for endpoint in teddy_salad.endpoints %}
+    - url: https://{{ endpoint }}
+{% endfor %}
+  tls:
+    ciphersuites: {{ ssl_ciphers }}
+    ciphersuitesstrictsupported: null
+    curvepreferences:
+    - x25519
+    - secp256r1
+    - secp384r1
+    minversion: TLS1.2
+    rootca: {{ tls_certificates_base_path }}/{{ libellum.root_ca }}
+  recipients:
+    - {{ tls_certificates_base_path }}/recipients.crt
+
+# needed for agent certificates
+libellum:
+  server: https://{{ libellum.server }}
+
+# the address to listen on
+listen: {{ teddy_salad.ip | default('0.0.0.0') }}:{{ teddy_salad.port | default('5046') }}
+
+tlsconfig:
+  ciphersuites: {{ ssl_ciphers }}
+  ciphersuitesstrictsupported: null
+  curvepreferences:
+  - x25519
+  - secp256r1
+  - secp384r1
+  minversion: TLS1.2
+  clientauth: RequestClientCert
+  certificate:
+    certificate: {{ tls_certificates_base_path }}/{{ libellum.cert }}
+    privatekey: {{ tls_keys_base_path }}/{{ libellum.key }}
+    passphrase: null
+  rootca: {{ tls_certificates_base_path }}/{{ libellum.root_ca }}
+  clientca: {{ tls_certificates_base_path }}/{{ libellum.client_ca }}
+
+codeSigningCertificate:
+  certificate: {{ tls_certificates_base_path }}/teddy-salad/codesign.crt
+  privateKey: {{ tls_keys_base_path }}/teddy-salad/codesign.key
+{% if vault_codesigning_passphrase is defined %}
+  passphrase: {{ vault_codesigning_passphrase }}
+{% endif %}

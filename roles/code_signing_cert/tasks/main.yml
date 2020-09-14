@@ -1,0 +1,30 @@
+- name: Push template for openssl config
+  template:
+    mode: 0600
+    src: tmp/codesigning.cfg.j2
+    dest: /tmp/codesigning.cfg
+
+- name: Remove existing file so openssl will generate a new one
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ codesigning.key }}"
+    - "{{ codesigning.cert }}"
+
+- name: Generate codesigning certificate
+  changed_when: true
+  command: "openssl req -x509 -newkey rsa:4096 {% if vault_codesigning_passphrase is defined %} -passout env:CODESIGNING_PASSPHRASE{% else %} -nodes{% endif %} -keyout {{ codesigning.key }} -sha256 -config /tmp/codesigning.cfg -extensions v3_req -out {{ codesigning.cert }} -days 3650" # noqa 204
+  environment:
+    CODESIGNING_PASSPHRASE: "{{ vault_codesigning_passphrase }}"
+
+- name: Convert key
+  when: vault_codesigning_passphrase is defined
+  command: "openssl rsa -aes256 -in {{ codesigning.key }} -out {{ codesigning.key }} {% if vault_codesigning_passphrase is defined %} -passout env:CODESIGNING_PASSPHRASE{% endif %} {% if vault_codesigning_passphrase is defined %} -passin env:CODESIGNING_PASSPHRASE{% endif %}" # noqa 204
+  environment:
+    CODESIGNING_PASSPHRASE: "{{ vault_codesigning_passphrase }}"
+
+- name: Remove openssl config file
+  file:
+    path: /tmp/codesigning.cfg
+    state: absent

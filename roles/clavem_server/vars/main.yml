@@ -1,0 +1,5 @@
+libellum:
+  service: "CLAVEM"
+  user: clavem-server
+  cert: clavem.crt
+  key: clavem.key

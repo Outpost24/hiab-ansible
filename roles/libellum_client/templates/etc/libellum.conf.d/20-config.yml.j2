@@ -1,0 +1,21 @@
+libellum:
+{% if libellum.server is defined %}
+  server: https://{{ libellum.server }}
+{% endif %}
+  renew: {{ libellum.renew | default('4320h') }}
+
+tlsconfig:
+  ciphersuites: ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA384
+  ciphersuitesstrictsupported: null
+  curvepreferences:
+  - x25519
+  - secp256r1
+  - secp384r1
+  minversion: TLS1.2
+  clientauth: RequestClientCert
+  certificates:
+    - certificate: {{ tls_certificates_base_path }}/{{ libellum.cert }}
+      privatekey: {{ tls_keys_base_path }}/{{ libellum.key }}
+      passphrase: {{ libellum.passphrase | to_nice_json }}
+  rootca: {{ tls_certificates_base_path }}/{{ libellum.root_ca | default('outscan.crt') }}
+  clientca: {{ tls_certificates_base_path }}/{{ libellum.client_ca | default('outscan.crt') }}

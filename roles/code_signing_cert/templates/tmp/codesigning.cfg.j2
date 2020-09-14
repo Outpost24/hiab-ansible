@@ -1,0 +1,26 @@
+[req]
+distinguished_name = req_distinguished_name
+prompt = no
+
+[req_distinguished_name]
+{% if hiab.country is defined %}
+C = {{ hiab.country }}
+{% endif %}
+{% if hiab.state is defined %}
+ST = {{ hiab.state }}
+{% endif %}
+{% if hiab.location is defined %}
+L = {{ hiab.location }}
+{% endif %}
+{% if hiab.organization is defined %}
+O = {{ hiab.organization }}
+{% endif %}
+OU = {{ outscan.site_basehref }}
+CN = {{ outscan.username }}
+
+[v3_req]
+{# Extensions to add to a certificate request#}
+subjectKeyIdentifier = hash
+basicConstraints = CA:FALSE
+keyUsage = digitalSignature
+extendedKeyUsage = codeSigning

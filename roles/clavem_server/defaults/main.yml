@@ -1,0 +1,5 @@
+clavem:
+  confdir: /etc/clavem.conf.d/
+  allowed_services:
+    - HIAB_SCHEDULER
+    - HIAB_SCANNER

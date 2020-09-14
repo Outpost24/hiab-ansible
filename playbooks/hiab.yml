@@ -1,0 +1,78 @@
+- name: Install clavem-server
+  hosts:
+    - clavem
+    - dsagent
+  roles:
+    - clavem_server
+  become: yes
+  gather_facts: yes
+  vars:
+    bootstrap: true
+  serial: "{{ hiab_update_serial | default('100%') }}"
+  vars_files:
+    - ../../vault_vars/hiab.yml
+  tags:
+    - clavem-server
+
+- name: Install Teddy-salad
+  hosts:
+    - teddy_salad
+    - dsagent
+  roles:
+    - teddy_salad
+  become: yes
+  vars:
+    bootstrap: true
+  serial: "{{ hiab_update_serial | default('100%') }}"
+  vars_files:
+    - ../../vault_vars/hiab.yml
+  tags:
+    - teddy-salad
+
+- name: Gather libellum recipients
+  hosts: hiab
+  gather_facts: false
+  tasks:
+    - name: Create recipient directories # noqa 208
+      run_once: true
+      delegate_to: localhost
+      become: no
+      file:
+        path: "{{ playbook_dir }}/files{{ tls_certificates_base_path }}/recipients"
+        state: directory
+
+    - name: Grab certificates from hiabs
+      delegate_to: localhost
+      become: no
+      changed_when: false
+      shell: |
+        set -o pipefail
+        openssl s_client -servername appliance -connect {{ inventory_hostname }}:443 </dev/null 2>/dev/null | sed -n -e '/BEGIN\ CERTIFICATE/,/END\ CERTIFICATE/ p' > {{ playbook_dir }}/files{{ tls_certificates_base_path }}/recipients/{{ inventory_hostname }}.crt # noqa 204
+
+    - name: Concatenate recipients
+      changed_when: false
+      shell: |
+        find {{ playbook_dir }}/files{{ tls_certificates_base_path }}/recipients/ \
+          {{ inventory_files_dir }}{{ tls_certificates_base_path }}/clavem -type f -name "*.crt" -exec sed -n '1,/---END/p' {} \; \
+          > {{ playbook_dir }}/files{{ tls_certificates_base_path }}/recipients.crt
+      run_once: true
+      become: no
+      delegate_to: localhost
+  tags:
+    - libellum
+    - recipients
+
+- name: Copy libellum recipients
+  hosts: dsagent
+  tasks:
+    - name: Copy recipients
+      copy:
+        src: "{{ playbook_dir }}/files{{ tls_certificates_base_path }}/recipients.crt"
+        dest: "{{ tls_certificates_base_path }}/recipients.crt"
+        owner: root
+        group: root
+        mode: "0644"
+  become: yes
+  tags:
+    - libellum
+    - recipients

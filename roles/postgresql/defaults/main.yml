@@ -1,0 +1,119 @@
+psqlversion: 10
+
+psql_packages:
+  - "postgresql{{ psqlversion }}-server"
+  - "postgresql{{ psqlversion }}-contrib"
+psql_state: present
+
+psql_unit: "postgresql-{{ psqlversion }}"
+psql_runstate: started
+psql_enabled: yes
+
+psqlconfigfile: "/var/lib/pgsql/{{ psqlversion }}/data/postgresql.conf"
+
+dbnet: "127.0.0.1/8"
+dbrole: "single"
+
+pghba:
+  - type: local
+    database: all
+    user: all
+    address:
+    authmethod: peer
+  - type: host
+    database: all
+    user: all
+    address: 127.0.0.0/8
+    authmethod: ident
+  - type: host
+    database: all
+    user: all
+    address: ::1/128
+    authmethod: ident
+
+psql_archive_command: ""
+psql_autovacuum_analyze_scale_factor: 0.1
+psql_autovacuum_analyze_threshold: 50
+psql_autovacuum_max_workers: 3
+psql_autovacuum_vacuum_scale_factor: 0.2
+psql_autovacuum_vacuum_threshold: 50
+psql_bgwriter_delay: "200ms"
+psql_bgwriter_flush_after: 512kB
+psql_bgwriter_lru_maxpages: 100
+psql_bgwriter_lru_multiplier: 2.0
+psql_checkpoint_completion_target: 0.9
+psql_cluster_name: ""
+psql_datestyle: iso, mdy
+psql_default_statistics_target: 100
+psql_default_text_search_config: pg_catalog.english
+psql_dynamic_shared_memory_type: posix
+psql_effective_cache_size: "{{ (3 * ansible_memtotal_mb / 4) | int }}MB"
+psql_effective_io_concurrency: 1
+psql_huge_pages: try
+psql_krb_server_keyfile: ""
+psql_lc_messages: en_US.UTF-8
+psql_lc_monetary: en_US.UTF-8
+psql_lc_numeric: en_US.UTF-8
+psql_lc_time: en_US.UTF-8
+psql_listen_addresses: "*"
+psql_log_autovacuum_min_duration: -1
+psql_log_checkpoints: "off"
+psql_log_connections: "off"
+psql_log_destination: stderr
+psql_log_directory: pg_log
+psql_log_disconnections: "off"
+psql_log_error_verbosity: default
+psql_log_executor_stats: "off"
+psql_log_filename: postgresql-%a.log
+psql_logging_collector: "on"
+psql_log_line_prefix: "< %m > "
+psql_log_lock_waits: "off"
+psql_log_min_duration_statement: -1
+psql_log_parser_stats: "off"
+psql_log_planner_stats: "off"
+psql_log_rotation_age: 1d
+psql_log_rotation_size: 0
+psql_log_statement: "none"
+psql_log_temp_files: -1
+psql_log_timezone: UTC
+psql_log_truncate_on_rotation: "on"
+psql_maintenance_work_mem: "{{ (ansible_memtotal_mb / 16) | int }}MB"
+psql_max_connections: 100
+psql_max_locks_per_transaction: 64
+psql_max_parallel_workers: 8
+psql_max_parallel_workers_per_gather: 2
+psql_max_prepared_transactions: 0
+psql_max_replication_slots: 10
+psql_max_stack_depth: 2MB
+psql_max_wal_senders: 10
+psql_max_wal_size: 1GB
+psql_max_worker_processes: 8
+psql_min_wal_size: 80MB
+psql_parallel_setup_cost: 1000.0
+psql_parallel_tuple_cost: 0.1
+psql_password_encryption: scram-sha-256
+psql_random_page_cost: 4.0
+psql_shared_buffers: "{{ (ansible_memtotal_mb / 4) | int }}MB"
+psql_shared_preload_libraries: ""
+psql_ssl_ca_file: ""
+psql_ssl_ciphers: ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256
+psql_ssl_dh_params_file: ""
+psql_ssl_ecdh_curve: "prime256v1"
+psql_ssl_prefer_server_ciphers: "on"
+psql_standard_conforming_strings: "on"
+psql_syslog_facility: "LOCAL0"
+psql_syslog_ident: "postgres"
+psql_syslog_sequence_numbers: "on"
+psql_syslog_split_messages: "on"
+psql_timezone: UTC
+psql_track_activities: "on"
+psql_track_activity_query_size: 1024
+psql_track_commit_timestamp: "off"
+psql_track_counts: "on"
+psql_track_io_timing: "off"
+psql_wal_buffers: "{{ (3 * ansible_memtotal_mb / 400) | int }}MB"
+psql_wal_compression: "off"
+psql_wal_keep_segments: 0
+psql_wal_log_hints: "off"
+psql_wal_sender_timeout: 60s
+psql_work_mem: "{{ (ansible_memtotal_mb / 200) | int }}MB"

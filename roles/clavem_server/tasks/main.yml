@@ -1,0 +1,200 @@
+- name: Enroll certificates
+  import_role:
+    name: libellum_client
+  tags:
+    - libellum
+
+- name: Set clavem_update
+  set_fact:
+    clavem_update: true
+  tags:
+    - never
+    - update
+
+- name: Install Clavem and pre-reqs
+  package:
+    name: [ clavem-server, python2-psycopg2 ]
+    state: present
+  when: clavem_update is not defined or not clavem_update
+  notify:
+    - restart clavem-server
+
+- name: Update clavem and pre-reqs # noqa 403 Skip rule for not using "state: latest" as this task's purpose is to update the package
+  when: clavem_update is defined and clavem_update
+  package:
+    name: [ clavem-server, python2-psycopg2 ]
+    state: latest
+  notify:
+    - restart clavem-server
+
+- name: Set permissions on certificates
+  import_role:
+    name: libellum_certs
+  tags:
+    - libellum
+
+- name: Copy clavem config
+  template:
+    src: etc/clavem.conf.d/20-config.yml.j2
+    dest: /etc/clavem.conf.d/20-config.yml
+    owner: root
+    group: clavem-server
+    mode: 0640
+  notify:
+    - restart clavem-server
+
+- name: Create encryption certificate directories
+  run_once: true
+  delegate_to: localhost
+  become: no
+  file:
+    mode: 0755
+    path: "{{ inventory_files_dir }}{{ item }}/clavem/"
+    state: directory
+  loop:
+    - "{{ tls_certificates_base_path }}"
+    - "{{ tls_keys_base_path }}"
+
+- name: Set operator path
+  set_fact:
+    operator_tls_certificates_base_path: "{{ tls_certificates_base_path }}"
+    operator_tls_keys_base_path: "{{ tls_keys_base_path }}"
+
+- name: Copy encryption certificates
+  when: not ansible_check_mode
+  run_once: true
+  copy:
+    src: "{{ inventory_files_dir }}{{ tls_certificates_base_path }}/clavem/"
+    dest: "{{ tls_certificates_base_path }}/clavem/"
+    owner: root
+    group: clavem-server
+    mode: 0640
+  notify:
+    - restart clavem-server
+
+- name: Copy encryption keys
+  when: not ansible_check_mode
+  run_once: true
+  copy:
+    src: "{{ inventory_files_dir }}{{ tls_keys_base_path }}/clavem/"
+    dest: "{{ tls_keys_base_path }}/clavem/"
+    owner: root
+    group: clavem-server
+    mode: 0640
+  notify:
+    - restart clavem-server
+
+- name: Enroll Encryption Certificates
+  include_role:
+    name: libellum_client
+    apply:
+      run_once: true
+    tasks_from: enroll
+  vars:
+    outscan_enroll_skip_install: true
+    libellum:
+      service: "ENCRYPTION"
+      user: clavem-server
+      cert: "encryption.crt"
+      key: "encryption.key"
+      passphrase: "{{ vault_clavem_encryption_key_passphrase }}"
+    tls_certificates_base_path: "/etc/pki/tls/certs/clavem/"
+    tls_keys_base_path: "/etc/pki/tls/private/clavem/"
+
+- name: Find encryption certificates
+  when: not ansible_check_mode
+  run_once: true
+  find:
+    paths: "{{ tls_certificates_base_path }}/clavem/"
+  register: encryption_crts
+
+- name: Fetch encryption certificates
+  when: not ansible_check_mode
+  run_once: true
+  loop: "{{ encryption_crts.files | map(attribute='path') | list }}"
+  fetch:
+    flat: true
+    src: "{{ item }}"
+    dest: "{{ inventory_files_dir }}{{ tls_certificates_base_path }}/clavem/"
+
+- name: Find encryption keys
+  when: not ansible_check_mode
+  run_once: true
+  find:
+    paths: "{{ tls_keys_base_path }}/clavem/"
+  register: encryption_keys
+
+- name: Fetch encryption keys
+  when: not ansible_check_mode
+  run_once: true
+  loop: "{{ encryption_keys.files | map(attribute='path') | list }}"
+  fetch:
+    flat: true
+    src: "{{ item }}"
+    dest: "{{ inventory_files_dir }}{{ tls_keys_base_path }}/clavem/"
+
+- name: Delegate to localhost
+  run_once: true
+  delegate_to: localhost
+  become: no
+  block:
+    - name: Check if old cert exists
+      stat:
+        path: "{{ inventory_files_dir }}{{ tls_certificates_base_path }}/clavem/encryption.crt.old"
+      register: oldcert
+
+    - name: Move Encryption Certificates
+      when: oldcert.stat.exists
+      vars:
+        time: "{{ ansible_date_time.epoch }}"
+      command:
+        argv:
+          - mv
+          - "{{ inventory_files_dir }}{{ item.dir }}/clavem/encryption.{{ item.ext }}.old"
+          - "{{ inventory_files_dir }}{{ item.dir }}/clavem/encryption_{{ time }}.{{ item.ext }}"
+      loop:
+        - { ext: "crt", dir: "{{ tls_certificates_base_path }}" }
+        - { ext: "key", dir: "{{ tls_keys_base_path }}" }
+        - { ext: "crt.csr", dir: "{{ tls_certificates_base_path }}" }
+
+    - name: Ensure commit
+      import_role:
+        name: ensure_commit
+      vars:
+        gitdir: "{{ inventory_files_dir }}"
+        gitpaths: "{{ inventory_files_dir }}{{ tls_certificates_base_path }}/clavem {{ inventory_files_dir }}{{ tls_keys_base_path }}/clavem"
+        gitprompt: "Make sure you've committed the certificate and key we just created"
+
+- name: Copy encryption certificates
+  when: not ansible_check_mode
+  copy:
+    src: "{{ inventory_files_dir }}{{ tls_certificates_base_path }}/clavem/"
+    dest: "{{ tls_certificates_base_path }}/clavem/"
+    owner: root
+    group: clavem-server
+    mode: 0640
+  notify:
+    - restart clavem-server
+
+- name: Copy encryption keys
+  when: not ansible_check_mode
+  copy:
+    src: "{{ inventory_files_dir }}{{ tls_keys_base_path }}/clavem/"
+    dest: "{{ tls_keys_base_path }}/clavem/"
+    owner: root
+    group: clavem-server
+    mode: 0640
+  notify:
+    - restart clavem-server
+
+- name: Enable the server
+  systemd:
+    name: clavem-server
+    enabled: yes
+
+- name: Open firewall for clavem service
+  changed_when: "'Warning: ALREADY_ENABLED' not in firewallcmdout.stderr"
+  register: firewallcmdout
+  shell: |
+    firewall-cmd {% if firewalld_zone is defined %} --zone={{ firewalld_zone }} {% endif %} --add-port=5044/tcp --permanent
+    firewall-cmd {% if firewalld_zone is defined %} --zone={{ firewalld_zone }} {% endif %} --add-port=5044/tcp

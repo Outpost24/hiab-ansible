@@ -1,0 +1,86 @@
+---
+- name: Install postgresql packages
+  package:
+    name: "{{ psql_packages }}"
+    state: "{{ psql_state }}"
+  tags:
+    - install
+
+- name: Initialise database
+  command: /usr/pgsql-{{ psqlversion }}/bin/postgresql-{{ psqlversion }}-setup initdb
+  args:
+    creates: "{{ psqlconfigfile }}"
+  when: dbrole is defined and dbrole in ["master", "single"]
+  tags:
+    - initialise
+
+- name: Check if certificate exists
+  stat:
+    path: "{{ tls_certificates_base_path }}/{{ psql_ssl_cert_file }}"
+  register: certs
+  check_mode: no
+
+- name: Check if key exists
+  stat:
+    path: "{{ tls_certificates_base_path }}/{{ psql_ssl_key_file }}"
+  register: keys
+  check_mode: no
+
+- name: Push config files for postgres (master or single only)
+  when: dbrole is defined and dbrole in ["master", "single"]
+  loop:
+    - "postgresql.conf"
+    - "pg_hba.conf"
+  notify: restart postgresql
+  template:
+    src: "var/lib/pgsql/10/data/{{ item }}.j2"
+    dest: "/var/lib/pgsql/{{ psqlversion }}/data/{{ item }}"
+    mode: 0600
+    owner: postgres
+    group: postgres
+  tags:
+    - config
+
+- name: Run replica tasks
+  when: dbrole is defined and dbrole == "replica"
+  block:
+  - name: Restore the data to replica (MAY TAKE SOME TIME!)
+    command: pg_basebackup -D /var/lib/pgsql/{{ psqlversion }}/data -h {{ dbmasterip }} -U postgres
+    become_user: postgres
+    become: yes
+    args:
+      creates: "{{ psqlconfigfile }}"
+    tags:
+      - never
+      - restore
+
+  - name: Push config files for postgres (replica only)
+    loop:
+      - "postgresql.conf"
+      - "pg_hba.conf"
+    notify: restart postgresql
+    template:
+      src: "var/lib/pgsql/10/data/{{ item }}.j2"
+      dest: "/var/lib/pgsql/{{ psqlversion }}/data/{{ item }}"
+      mode: 0600
+      owner: postgres
+      group: postgres
+    tags:
+      - config
+
+  - name: Push recovery.conf to replicas
+    when: dbbackupip is defined
+    template:
+      src: var/lib/pgsql/10/data/recovery.conf.j2
+      dest: /var/lib/pgsql/{{ psqlversion }}/data/recovery.conf
+      mode: 0600
+      owner: postgres
+      group: postgres
+    tags:
+      - config
+
+- name: Ensure the PostgreSQL service is running
+  service:
+    name: "{{ psql_unit }}"
+    state: "{{ psql_runstate }}"
+    enabled: "{{ psql_enabled }}"

@@ -1,0 +1,176 @@
+- name: Check if libellum is initialized
+  check_mode: no
+  stat:
+    path: "{{ tls_certificates_base_path }}/{{ libellum.cert }}"
+  register: libellum_cert_stat
+
+- name: Check for local config
+  check_mode: no
+  stat:
+    path: "/etc/libellum_{{ libellum.service }}.conf.d/20-config.yml"
+  register: local_config
+
+- name: Ignore operator certificate when provided account exists
+  when: outscan.username is not defined
+  block:
+    - name: Find operator certificate for this environment
+      stat:
+        path: "{{ operator_tls_certificates_base_path | default(tls_certificates_base_path) }}/{{ hostvars[libellum.server_mgmt]['libellum']['role'] }}_{% if osenv is defined %}{{ osenv }}_{% endif %}operator.crt" # noqa 204
+      register: operatorcertificate
+      delegate_to: localhost
+      become: no
+
+    - name: Output status of operator certificate
+      when: not operatorcertificate.stat.exists
+      debug:
+        msg: "No operator certificate found for this environment, skipping enrollment parts"
+
+- name: Gather the package facts
+  package_facts:
+    manager: auto
+
+- name: Enroll libellum
+  when: "not libellum_cert_stat.stat.exists and (outscan.username is defined or operatorcertificate.stat.exists) or (( outscan_enroll_skip_install is not defined or not outscan_enroll_skip_install ) and 'service-custom-' not in (ansible_facts.packages|join(' ')))" # noqa 204
+  block:
+    - name: Libellum create csr
+      command:
+        argv:
+          - /usr/bin/libellum
+          - enroll
+          - create-csr
+          - --stderr-log
+          - "--service={{ libellum.service }}"
+          - "--certificate={{ tls_certificates_base_path }}/{{ libellum.cert }}"
+          - "--key={{ tls_keys_base_path }}/{{ libellum.key }}"
+          - "--sans={% if libellum.sans is defined %}{{ libellum.sans | join(',') }}{% endif %}"
+          - "{% if not local_config.stat.exists %}--passphrase={{ libellum.passphrase | default('') }}{% endif %}"
+
+    - name: Slurp libellum csr
+      when: not ansible_check_mode
+      slurp:
+        src: "{{ tls_certificates_base_path }}/{{ libellum.cert }}.csr.new"
+      register: libellum_csr
+
+    - name: Using operator certificate
+      when: operatorcertificate.stat is defined and operatorcertificate.stat.exists
+      block:
+        - name: Enroll libellum csr
+          delegate_to: localhost
+          uri:
+            url: "https://{{ libellum.server }}/rest/v0/certificates"
+            method: POST
+            body_format: json
+            body:
+              certificateSigningRequest: "{{ libellum_csr['content'] | b64decode }}"
+            client_cert: "{{ operator_tls_certificates_base_path | default(tls_certificates_base_path) }}/{{ hostvars[libellum.server_mgmt]['libellum']['role'] }}_{% if osenv is defined %}{{ osenv }}_{% endif %}operator.crt" # noqa 204
+            client_key: "{{ operator_tls_keys_base_path | default(tls_keys_base_path) }}/{{ hostvars[libellum.server_mgmt]['libellum']['role'] }}_{% if osenv is defined %}{{ osenv }}_{% endif %}operator.key" # noqa 204
+            validate_certs: no
+          become: no
+          register: libellum_crt
+
+        - name: Copy enrolled libellum certificate
+          copy:
+            content: "{{ libellum_crt.json.certificate }}"
+            dest: "{{ tls_certificates_base_path }}/{{ libellum.cert }}.new"
+
+    - name: Using outscan account
+      when: outscan.username is defined
+      block:
+        - name: Login using outscan account
+          uri:
+            url: "https://{{ outscan.site_basehref }}/opi/rest/auth/login"
+            method: POST
+            body_format: form-urlencoded
+            body:
+              username: "{{ outscan.username }}"
+              password: "{{ vault_outscan_password }}"
+            validate_certs: "{{ outscan.validate_certs|default('yes') }}"
+            return_content: yes
+          register: outscan_auth
+
+        - name: Create temporaty RPM directory
+          check_mode: no
+          tempfile:
+            path: "{{ lookup('env', 'HOME') }}"
+            prefix: "ansible."
+            state: directory
+          register: tmpdir
+
+        - name: Enroll libellum csr using outscan account
+          when: not ansible_check_mode
+          uri:
+            url: "https://{{ outscan.site_basehref }}/opi/rest/enroll/services"
+            method: POST
+            headers:
+              Content-Type: text/plain
+              Authorization: "Bearer {{ outscan_auth['content'] }}"
+            body: "{{ libellum_csr['content'] | b64decode }}"
+            dest: "{{ tmpdir.path }}/enroll.tar.gz"
+            validate_certs: "{{ outscan.validate_certs|default('yes') }}"
+
+        - name: Unpack archive
+          when: not ansible_check_mode
+          unarchive:
+            copy: no
+            src: "{{ tmpdir.path }}/enroll.tar.gz"
+            dest: "{{ tmpdir.path }}"
+
+        - name: Register copied files
+          when: outscan_enroll_skip_install is not defined or not outscan_enroll_skip_install
+          find:
+            paths: "{{ tmpdir.path }}"
+            patterns: "*.rpm"
+          register: rpms
+
+        - name: Install RPMs
+          when: outscan_enroll_skip_install is not defined or not outscan_enroll_skip_install
+          yum:
+            name: "{{ rpms.files | map(attribute='path') | list }}"
+            state: present
+            disable_gpg_check: true
+
+        - name: Move enrolled libellum certificate
+          command: mv "{{ tmpdir.path }}/service.crt" "{{ tls_certificates_base_path }}/{{ libellum.cert }}.new"
+
+        - name: Delete temporary RPM directory
+          file:
+            path: "{{ tmpdir.path }}"
+            state: absent
+
+    - name: Register libellum certificate
+      command:
+        argv:
+          - /usr/bin/libellum
+          - enroll
+          - register-crt
+          - --stderr-log
+          - "--certificate={{ tls_certificates_base_path }}/{{ libellum.cert }}"
+          - "--key={{ tls_keys_base_path }}/{{ libellum.key }}"
+          - "--passphrase={% if not local_config.stat.exists %}{{ libellum.passphrase | default('') }}{% endif %}"
+
+- name: Check for local config
+  stat:
+    path: "/etc/libellum_{{ libellum.service }}.conf.d/20-config.yml"
+  register: local_config
+
+- name: Renew libellum
+  when: libellum_cert_stat.stat.exists
+  command:
+    argv:
+      - /usr/bin/libellum
+      - enroll
+      - --stderr-log
+      - "{% if local_config.stat.exists %}--settings=/etc/libellum_{{ libellum.service }}.conf.d/{% endif %}"
+      - "{% if not local_config.stat.exists %}--server=https://{{ libellum.server }}{% endif %}"
+      - "--service={{ libellum.service }}"
+      - "--certificate={{ tls_certificates_base_path }}/{{ libellum.cert }}"
+      - "--key={{ tls_keys_base_path }}/{{ libellum.key }}"
+      - "{% if libellum.sans is defined %}--sans={{ libellum.sans | join(',') }}{% endif %}"
+      - "{% if not local_config.stat.exists %}--passphrase={{ libellum.passphrase | default('') }}{% endif %}"
+  register: result
+  failed_when: "result.rc != 0 and result.rc != 2" # 0 on successful renewal, 2 on not time to renew
+  changed_when: "result.rc != 2"
+
+- name: Unset local config variable
+  set_fact:
+    local_config: null

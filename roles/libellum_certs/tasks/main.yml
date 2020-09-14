@@ -1,0 +1,51 @@
+- name: Find cert files
+  find:
+    paths: "{{ tls_certificates_base_path }}"
+    patterns: "{{ libellum.cert }}*"
+  register: libellum_certs
+  check_mode: no
+
+- name: Set extended attributes on cert file
+  acl:
+    path: "{{ item.path }}"
+    entity: "{{ libellum.user }}"
+    etype: user
+    permissions: r
+    state: present
+  loop: "{{ libellum_certs.files }}"
+
+- name: Set extended attributes on cert file
+  when: libellum.group is defined
+  acl:
+    path: "{{ item.path }}"
+    entity: "{{ libellum.group }}"
+    etype: group
+    permissions: r
+    state: present
+  loop: "{{ libellum_certs.files }}"
+
+- name: Find key files
+  find:
+    paths: "{{ tls_keys_base_path }}"
+    patterns: "{{ libellum.key }}*"
+  register: libellum_keys
+  check_mode: no
+
+- name: Set extended attributes on key file
+  acl:
+    path: "{{ item.path }}"
+    entity: "{{ libellum.user }}"
+    etype: user
+    permissions: r
+    state: present
+  loop: "{{ libellum_keys.files }}"
+
+- name: Set extended attributes on key file
+  when: libellum.group is defined
+  acl:
+    path: "{{ item.path }}"
+    entity: "{{ libellum.group }}"
+    etype: group
+    permissions: r
+    state: present
+  loop: "{{ libellum_keys.files }}"
