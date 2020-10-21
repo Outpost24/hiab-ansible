@@ -1,11 +1,11 @@
 - name: Check if libellum is initialized
-  check_mode: no
+  check_mode: false
   stat:
     path: "{{ tls_certificates_base_path }}/{{ libellum.cert }}"
   register: libellum_cert_stat
 
 - name: Check for local config
-  check_mode: no
+  check_mode: false
   stat:
     path: "/etc/libellum_{{ libellum.service }}.conf.d/20-config.yml"
   register: local_config
@@ -18,7 +18,7 @@
         path: "{{ operator_tls_certificates_base_path | default(tls_certificates_base_path) }}/{{ hostvars[libellum.server_mgmt]['libellum']['role'] }}_{% if osenv is defined %}{{ osenv }}_{% endif %}operator.crt" # noqa 204
       register: operatorcertificate
       delegate_to: localhost
-      become: no
+      become: false
 
     - name: Output status of operator certificate
       when: not operatorcertificate.stat.exists
@@ -64,8 +64,8 @@
               certificateSigningRequest: "{{ libellum_csr['content'] | b64decode }}"
             client_cert: "{{ operator_tls_certificates_base_path | default(tls_certificates_base_path) }}/{{ hostvars[libellum.server_mgmt]['libellum']['role'] }}_{% if osenv is defined %}{{ osenv }}_{% endif %}operator.crt" # noqa 204
             client_key: "{{ operator_tls_keys_base_path | default(tls_keys_base_path) }}/{{ hostvars[libellum.server_mgmt]['libellum']['role'] }}_{% if osenv is defined %}{{ osenv }}_{% endif %}operator.key" # noqa 204
-            validate_certs: no
-          become: no
+            validate_certs: false
+          become: false
           register: libellum_crt
 
         - name: Copy enrolled libellum certificate
@@ -84,12 +84,12 @@
             body:
               username: "{{ outscan.username }}"
               password: "{{ vault_outscan_password }}"
-            validate_certs: "{{ outscan.validate_certs|default('yes') }}"
-            return_content: yes
+            validate_certs: "{{ outscan.validate_certs|default('true') }}"
+            return_content: true
           register: outscan_auth
 
         - name: Create temporaty RPM directory
-          check_mode: no
+          check_mode: false
           tempfile:
             path: "{{ lookup('env', 'HOME') }}"
             prefix: "ansible."
@@ -106,12 +106,12 @@
               Authorization: "Bearer {{ outscan_auth['content'] }}"
             body: "{{ libellum_csr['content'] | b64decode }}"
             dest: "{{ tmpdir.path }}/enroll.tar.gz"
-            validate_certs: "{{ outscan.validate_certs|default('yes') }}"
+            validate_certs: "{{ outscan.validate_certs|default('true') }}"
 
         - name: Unpack archive
           when: not ansible_check_mode
           unarchive:
-            copy: no
+            copy: false
             src: "{{ tmpdir.path }}/enroll.tar.gz"
             dest: "{{ tmpdir.path }}"
 

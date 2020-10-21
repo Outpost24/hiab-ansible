@@ -9,3 +9,6 @@ teddy_salad:
   self_sign_code_signing: false
   install: true
   install_pg: true
+  ensure_commit:
+    check: true
+    fail: true

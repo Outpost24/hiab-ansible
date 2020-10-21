@@ -43,12 +43,11 @@
   notify:
     - restart clavem-server
 
-- name: Create encryption certificate directories
+- name: Create encryption certificate directories locally # noqa 208
   run_once: true
   delegate_to: localhost
-  become: no
+  become: false
   file:
-    mode: 0755
     path: "{{ inventory_files_dir }}{{ item }}/clavem/"
     state: directory
   loop:
@@ -59,6 +58,15 @@
   set_fact:
     operator_tls_certificates_base_path: "{{ tls_certificates_base_path }}"
     operator_tls_keys_base_path: "{{ tls_keys_base_path }}"
+
+- name: Create encryption certificate directories
+  file:
+    mode: 0755
+    path: "{{ item }}/clavem/"
+    state: directory
+  loop:
+    - "{{ tls_certificates_base_path }}"
+    - "{{ tls_keys_base_path }}"
 
 - name: Copy encryption certificates
   when: not ansible_check_mode
@@ -98,8 +106,8 @@
       cert: "encryption.crt"
       key: "encryption.key"
       passphrase: "{{ vault_clavem_encryption_key_passphrase }}"
-    tls_certificates_base_path: "/etc/pki/tls/certs/clavem/"
-    tls_keys_base_path: "/etc/pki/tls/private/clavem/"
+    tls_certificates_base_path: "/etc/pki/tls/certs/clavem"
+    tls_keys_base_path: "/etc/pki/tls/private/clavem"
 
 - name: Find encryption certificates
   when: not ansible_check_mode
@@ -136,7 +144,7 @@
 - name: Delegate to localhost
   run_once: true
   delegate_to: localhost
-  become: no
+  become: false
   block:
     - name: Check if old cert exists
       stat:
@@ -161,9 +169,12 @@
       import_role:
         name: ensure_commit
       vars:
-        gitdir: "{{ inventory_files_dir }}"
-        gitpaths: "{{ inventory_files_dir }}{{ tls_certificates_base_path }}/clavem {{ inventory_files_dir }}{{ tls_keys_base_path }}/clavem"
-        gitprompt: "Make sure you've committed the certificate and key we just created"
+        ensure_commit:
+          gitdir: "{{ inventory_files_dir }}"
+          gitpaths: "{{ inventory_files_dir }}{{ tls_certificates_base_path }}/clavem {{ inventory_files_dir }}{{ tls_keys_base_path }}/clavem"
+          gitprompt: "Make sure you've committed the certificate and key we just created"
+          check: "{{ clavem.ensure_commit.check }}"
+          fail: "{{ clavem.ensure_commit.fail }}"
 
 - name: Copy encryption certificates
   when: not ansible_check_mode
@@ -189,8 +200,9 @@
 
 - name: Enable the server
   systemd:
+    daemon_reload: true
     name: clavem-server
-    enabled: yes
+    enabled: true
 
 - name: Open firewall for clavem service
   changed_when: "'Warning: ALREADY_ENABLED' not in firewallcmdout.stderr"

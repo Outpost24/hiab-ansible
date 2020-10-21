@@ -18,13 +18,13 @@
   stat:
     path: "{{ tls_certificates_base_path }}/{{ psql_ssl_cert_file }}"
   register: certs
-  check_mode: no
+  check_mode: false
 
 - name: Check if key exists
   stat:
     path: "{{ tls_certificates_base_path }}/{{ psql_ssl_key_file }}"
   register: keys
-  check_mode: no
+  check_mode: false
 
 - name: Push config files for postgres (master or single only)
   when: dbrole is defined and dbrole in ["master", "single"]
@@ -47,7 +47,7 @@
   - name: Restore the data to replica (MAY TAKE SOME TIME!)
     command: pg_basebackup -D /var/lib/pgsql/{{ psqlversion }}/data -h {{ dbmasterip }} -U postgres
     become_user: postgres
-    become: yes
+    become: true
     args:
       creates: "{{ psqlconfigfile }}"
     tags:

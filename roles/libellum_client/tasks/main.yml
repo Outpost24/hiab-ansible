@@ -2,7 +2,7 @@
   when: bootstrap is defined and bootstrap
   block:
   - name: Create temporaty RPM directory
-    check_mode: no
+    check_mode: false
     tempfile:
       path: /root/
       prefix: "ansible."
@@ -28,7 +28,7 @@
       disable_gpg_check: true
 
   - name: Delete temporary RPM directory
-    check_mode: no
+    check_mode: false
     file:
       path: "{{ tmpdir.path }}"
       state: absent
@@ -118,5 +118,5 @@
   file:
     src: "{{ tls_certificates_base_path }}/{{ libellum.cert }}"
     dest: "{{ tls_certificates_base_path }}/appliance.crt"
-    force: no
+    force: false
     state: link

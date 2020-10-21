@@ -3,7 +3,7 @@
     paths: "{{ tls_certificates_base_path }}"
     patterns: "{{ libellum.cert }}*"
   register: libellum_certs
-  check_mode: no
+  check_mode: false
 
 - name: Set extended attributes on cert file
   acl:
@@ -29,7 +29,7 @@
     paths: "{{ tls_keys_base_path }}"
     patterns: "{{ libellum.key }}*"
   register: libellum_keys
-  check_mode: no
+  check_mode: false
 
 - name: Set extended attributes on key file
   acl:

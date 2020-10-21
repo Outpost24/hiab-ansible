@@ -7,7 +7,7 @@ psql_state: present
 
 psql_unit: "postgresql-{{ psqlversion }}"
 psql_runstate: started
-psql_enabled: yes
+psql_enabled: true
 
 psqlconfigfile: "/var/lib/pgsql/{{ psqlversion }}/data/postgresql.conf"
 

@@ -91,11 +91,20 @@
 - name: Check if code signing cert exists
   run_once: true
   delegate_to: localhost
-  become: no
+  become: false
   stat:
     path: "{{ inventory_files_dir }}{{ tls_certificates_base_path }}/teddy-salad/codesign.crt"
   register: codesigningcert
 
+- name: Create codesign certificate directories
+  when: teddy_salad.install is defined and teddy_salad.install
+  file:
+    mode: 0755
+    path: "{{ item }}/teddy-salad/"
+    state: directory
+  loop:
+    - "{{ tls_certificates_base_path }}"
+    - "{{ tls_keys_base_path }}"
 
 - name: Code signing certificate creation
   when: teddy_salad.self_sign_code_signing is defined and teddy_salad.self_sign_code_signing and (codesigningcert.stat.exists is not defined or not codesigningcert.stat.exists) and teddy_salad.install is defined and teddy_salad.install # noqa 204
@@ -103,18 +112,9 @@
   block:
     - name: Create codesign certificate directories locally # noqa 208
       delegate_to: localhost
-      become: no
+      become: false
       file:
         path: "{{ inventory_files_dir }}{{ item }}/teddy-salad/"
-        state: directory
-      loop:
-        - "{{ tls_certificates_base_path }}"
-        - "{{ tls_keys_base_path }}"
-
-    - name: Create codesign certificate directories
-      file:
-        mode: 0755
-        path: "{{ item }}/teddy-salad/"
         state: directory
       loop:
         - "{{ tls_certificates_base_path }}"
@@ -144,13 +144,16 @@
 
     - name: Ensure commit
       delegate_to: localhost
-      become: no
+      become: false
       import_role:
         name: ensure_commit
       vars:
-        gitdir: "{{ inventory_files_dir }}"
-        gitpaths: "{{ inventory_files_dir }}{{ tls_certificates_base_path }}/teddy-salad/codesign.crt {{ inventory_files_dir }}{{ tls_keys_base_path }}/teddy-salad/codesign.key" # noqa 204
-        gitprompt: "Make sure you've committed the certificate and key we just created"
+        ensure_commit:
+          gitdir: "{{ inventory_files_dir }}"
+          gitpaths: "{{ inventory_files_dir }}{{ tls_certificates_base_path }}/teddy-salad/codesign.crt {{ inventory_files_dir }}{{ tls_keys_base_path }}/teddy-salad/codesign.key" # noqa 204
+          gitprompt: "Make sure you've committed the certificate and key we just created"
+          check: "{{ teddy_salad.ensure_commit.check }}"
+          fail: "{{ teddy_salad.ensure_commit.fail }}"
 
 - name: Copy code signing certificate
   when: teddy_salad.install is defined and teddy_salad.install
@@ -174,8 +177,9 @@
 
 - name: Enable the server
   systemd:
+    daemon_reload: true
     name: teddy-salad
-    enabled: yes
+    enabled: true
 
 - name: Open firewall for teddy-salad service
   changed_when: "'Warning: ALREADY_ENABLED' not in firewallcmdout.stderr"

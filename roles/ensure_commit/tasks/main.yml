@@ -1,28 +1,29 @@
 - name: Check git diff and ls-files
+  when: ensure_commit.check
   changed_when: gitdiff.stdout
   shell: |
     set -o pipefail
-    pushd {{ gitdir }} > /dev/null
-    git {% if gitdir is defined %} {% endif %} diff --name-status {{ gitpaths }}
-    git {% if gitdir is defined %} {% endif %} diff --name-status --staged {{ gitpaths }}
-    git {% if gitdir is defined %} {% endif %} ls-files --other --exclude-standard  {{ gitpaths }} | xargs --no-run-if-empty -n1 echo -e "U\t"
+    {% if ensure_commit.gitdir is defined %} pushd {{ ensure_commit.gitdir }} > /dev/null {% endif %}
+    git diff --name-status {{ ensure_commit.gitpaths }}
+    git diff --name-status --staged {{ ensure_commit.gitpaths }}
+    git ls-files --other --exclude-standard  {{ ensure_commit.gitpaths }} | xargs --no-run-if-empty -n1 echo -e "U\t"
     popd > /dev/null
   register: gitdiff
-  check_mode: no
+  check_mode: false
 
 - name: Confirm committal of key and cert
-  when: not ansible_check_mode and gitdiff.stdout
+  when: ensure_commit.check and not ansible_check_mode and gitdiff.stdout
   pause:
-    prompt: "{{ gitdiff.stdout }}\n{{ gitpromt | default('Make sure you have committed the listed files') }}"
+    prompt: "{{ gitdiff.stdout }}\n{{ ensure_commit.gitpromt | default('Make sure you have committed the listed files') }}"
 
 - name: Fail if uncommited keys and certs
-  when: not ansible_check_mode
+  when: ensure_commit.check and ensure_commit.fail and not ansible_check_mode
   shell: |
     set -o pipefail
-    pushd {{ gitdir }} > /dev/null
-    git {% if gitdir is defined %} {% endif %} diff --name-status {{ gitpaths }}
-    git {% if gitdir is defined %} {% endif %} diff --name-status --staged {{ gitpaths }}
-    git {% if gitdir is defined %} {% endif %} ls-files --other --exclude-standard  {{ gitpaths }} | xargs --no-run-if-empty -n1 echo -e "U\t"
+    {% if ensure_commit.gitdir is defined %} pushd {{ ensure_commit.gitdir }} > /dev/null {% endif %}
+    git diff --name-status {{ ensure_commit.gitpaths }}
+    git diff --name-status --staged {{ ensure_commit.gitpaths }}
+    git ls-files --other --exclude-standard  {{ ensure_commit.gitpaths }} | xargs --no-run-if-empty -n1 echo -e "U\t"
     popd > /dev/null
   register: gitdiff
   failed_when: gitdiff.stdout

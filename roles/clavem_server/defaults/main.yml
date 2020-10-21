@@ -3,3 +3,6 @@ clavem:
   allowed_services:
     - HIAB_SCHEDULER
     - HIAB_SCANNER
+  ensure_commit:
+    check: true
+    fail: true

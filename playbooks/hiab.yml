@@ -4,8 +4,8 @@
     - dsagent
   roles:
     - clavem_server
-  become: yes
-  gather_facts: yes
+  become: true
+  gather_facts: true
   vars:
     bootstrap: true
   serial: "{{ hiab_update_serial | default('100%') }}"
@@ -20,7 +20,7 @@
     - dsagent
   roles:
     - teddy_salad
-  become: yes
+  become: true
   vars:
     bootstrap: true
   serial: "{{ hiab_update_serial | default('100%') }}"
@@ -36,14 +36,14 @@
     - name: Create recipient directories # noqa 208
       run_once: true
       delegate_to: localhost
-      become: no
+      become: false
       file:
         path: "{{ playbook_dir }}/files{{ tls_certificates_base_path }}/recipients"
         state: directory
 
     - name: Grab certificates from hiabs
       delegate_to: localhost
-      become: no
+      become: false
       changed_when: false
       shell: |
         set -o pipefail
@@ -56,7 +56,7 @@
           {{ inventory_files_dir }}{{ tls_certificates_base_path }}/clavem -type f -name "*.crt" -exec sed -n '1,/---END/p' {} \; \
           > {{ playbook_dir }}/files{{ tls_certificates_base_path }}/recipients.crt
       run_once: true
-      become: no
+      become: false
       delegate_to: localhost
   tags:
     - libellum
@@ -72,7 +72,7 @@
         owner: root
         group: root
         mode: "0644"
-  become: yes
+  become: true
   tags:
     - libellum
     - recipients
