@@ -64,6 +64,7 @@
 
 - name: Copy libellum recipients
   hosts: dsagent
+  become: true
   tasks:
     - name: Copy recipients
       copy:
@@ -72,7 +73,11 @@
         owner: root
         group: root
         mode: "0644"
-  become: true
+
+    - name: Restart teddy-salad
+      service:
+        name: teddy-salad
+        state: restarted
   tags:
     - libellum
     - recipients

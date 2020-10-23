@@ -12,6 +12,11 @@
   tags:
     - postgresql
 
+- name: Restart postgres
+  service:
+    name: postgresql-10
+    state: restarted
+
 - name: Set teddy_salad_update
   set_fact:
     teddy_salad_update: true
