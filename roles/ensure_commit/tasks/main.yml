@@ -3,7 +3,8 @@
   changed_when: gitdiff.stdout
   shell: |
     set -o pipefail
-    {% if ensure_commit.gitdir is defined %} pushd {{ ensure_commit.gitdir }} > /dev/null {% endif %}
+    {% if ensure_commit.gitdir is defined %} pushd {{ ensure_commit.gitdir }} > /dev/null
+    {% endif %}
     git diff --name-status {{ ensure_commit.gitpaths }}
     git diff --name-status --staged {{ ensure_commit.gitpaths }}
     git ls-files --other --exclude-standard  {{ ensure_commit.gitpaths }} | xargs --no-run-if-empty -n1 echo -e "U\t"
@@ -20,7 +21,8 @@
   when: ensure_commit.check and ensure_commit.fail and not ansible_check_mode
   shell: |
     set -o pipefail
-    {% if ensure_commit.gitdir is defined %} pushd {{ ensure_commit.gitdir }} > /dev/null {% endif %}
+    {% if ensure_commit.gitdir is defined %} pushd {{ ensure_commit.gitdir }} > /dev/null
+    {% endif %}
     git diff --name-status {{ ensure_commit.gitpaths }}
     git diff --name-status --staged {{ ensure_commit.gitpaths }}
     git ls-files --other --exclude-standard  {{ ensure_commit.gitpaths }} | xargs --no-run-if-empty -n1 echo -e "U\t"
