@@ -5,17 +5,19 @@
   tags:
     - libellum
 
-- name: Install postgres
+- name: Install database postgres
   when: teddy_salad.install_pg is defined and teddy_salad.install_pg
-  import_role:
-    name: postgresql
-  tags:
-    - postgresql
+  block:
+    - name: Install postgres
+      import_role:
+        name: postgresql
+      tags:
+        - postgresql
 
-- name: Restart postgres
-  service:
-    name: postgresql-10
-    state: restarted
+    - name: Restart postgres
+      service:
+        name: postgresql-10
+        state: restarted
 
 - name: Set teddy_salad_update
   set_fact:
@@ -73,16 +75,16 @@
         name: teddy-salad
         owner: teddy-salad
 
-    - name: Check if teddy-salad database is initialized
-      ignore_errors: "{{ ansible_check_mode }}"
-      postgresql_query:
-        login_host: "{{ teddy_salad.db.host | default('127.0.0.1') }}"
-        db: teddy-salad
-        login_user: teddy-salad
-        login_password: "{{ vault_teddy_salad_db_password }}"
-        ssl_mode: "{{ teddy_salad.db.sslmode }}"
-        query: SELECT 1 AS initialized FROM information_schema.tables WHERE table_name = 'tenants' limit 1
-      register: teddy_salad_db_initialized
+- name: Check if teddy-salad database is initialized
+  ignore_errors: "{{ ansible_check_mode }}"
+  postgresql_query:
+    login_host: "{{ teddy_salad.db.host | default('127.0.0.1') }}"
+    db: teddy-salad
+    login_user: teddy-salad
+    login_password: "{{ vault_teddy_salad_db_password }}"
+    ssl_mode: "{{ teddy_salad.db.sslmode }}"
+    query: SELECT 1 AS initialized FROM information_schema.tables WHERE table_name = 'tenants' limit 1
+  register: teddy_salad_db_initialized
 
 - name: Initialize teddy-salad database
   when: teddy_salad.install is defined and teddy_salad.install and teddy_salad_db_initialized.rowcount is defined and teddy_salad_db_initialized.rowcount == 0
