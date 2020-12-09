@@ -188,8 +188,21 @@
         path: "{{ inventory_files_dir }}{{ o24_libellum_certificates_base_path }}/clavem/encryption.crt.old"
       register: oldcert
 
+    - name: Register saved certs
+      find:
+        paths: "{{ inventory_files_dir }}{{ tls_certificates_base_path }}/clavem"
+        get_checksum: true
+        patterns: "encryption_*.crt"
+      register: savedcerts
+
+    - name: Compare saved certs to old cert
+      loop: "{{ savedcerts.files | map(attribute='checksum') | list }}"
+      when: oldcert.stat.checksum != item
+      set_fact:
+        movecert: true
+
     - name: Move Encryption Certificates
-      when: oldcert.stat.exists
+      when: oldcert.stat.exists and movecert
       vars:
         time: "{{ ansible_date_time.epoch }}"
       command:
