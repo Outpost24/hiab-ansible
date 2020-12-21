@@ -197,9 +197,9 @@
 
     - name: Compare saved certs to old cert
       loop: "{{ savedcerts.files | map(attribute='checksum') | list }}"
-      when: oldcert.stat.checksum != item
+      when: oldcert.stat.checksum == item
       set_fact:
-        movecert: true
+        movecert: false
 
     - name: Move Encryption Certificates
       when: oldcert.stat.exists and movecert

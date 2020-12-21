@@ -1,5 +1,5 @@
 ---
-movecert: false
+movecert: true
 clavem:
   confdir: /etc/clavem.conf.d/
   allowed_services:
