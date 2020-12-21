@@ -258,5 +258,5 @@
   changed_when: "'Warning: ALREADY_ENABLED' not in firewallcmdout.stderr"
   register: firewallcmdout
   shell: |
-    firewall-cmd {% if firewalld_zones is defined %} --zone={{ firewalld_zone[0].name }} {% endif %} --add-port=5044/tcp --permanent
-    firewall-cmd {% if firewalld_zones is defined %} --zone={{ firewalld_zone[0].name }} {% endif %} --add-port=5044/tcp
+    firewall-cmd {% if firewalld_zones is defined %} --zone={{ firewalld_zones[0].name }} {% endif %} --add-port=5044/tcp --permanent
+    firewall-cmd {% if firewalld_zones is defined %} --zone={{ firewalld_zones[0].name }} {% endif %} --add-port=5044/tcp
