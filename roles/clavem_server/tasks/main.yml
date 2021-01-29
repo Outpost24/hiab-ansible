@@ -248,6 +248,44 @@
   notify:
     - restart clavem-server
 
+- name: Check if old cert exists on host
+  stat:
+    path: "{{ tls_certificates_base_path }}/clavem/encryption.crt.old"
+  register: old_cert_on_host
+
+- name: Delete old cert on host
+  when: old_cert_on_host.stat.exists
+  block:
+  - name: Register current certs
+    find:
+      paths: "{{ tls_certificates_base_path }}/clavem"
+      get_checksum: true
+      patterns: "encryption*.crt"
+    register: current_certs
+
+  - name: Compare saved certs to old cert
+    loop: "{{ current_certs.files | map(attribute='checksum') | list }}"
+    when: old_cert_on_host.stat.checksum == item
+    set_fact:
+      delete_old_cert: true
+
+  - name: Delete old certificate files
+    when: delete_old_cert
+    file:
+      path: "{{ item.dir }}/clavem/encryption.{{ item.ext }}.old"
+      state: absent
+    register: deleted
+    loop:
+        - { ext: "crt", dir: "{{ tls_certificates_base_path }}" }
+        - { ext: "key", dir: "{{ tls_keys_base_path }}" }
+        - { ext: "crt.csr", dir: "{{ tls_certificates_base_path }}" }
+
+- name: Exit playbook when crt.old does not exists on host in renamed format
+  when: old_cert_on_host.stat.exists and not delete_old_cert
+  debug:
+    msg: "crt.old has not been uploaded to host in renamed format, please verify certificates"
+  failed_when: old_cert_on_host.stat.exists and not delete_old_cert
+
 - name: Enable the server
   systemd:
     daemon_reload: true
