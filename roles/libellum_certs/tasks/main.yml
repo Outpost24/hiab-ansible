@@ -5,7 +5,8 @@
   register: libellum_certs
   check_mode: false
 
-- name: Set extended attributes on cert file
+- name: Set extended user attributes on cert file
+  when: libellum.user is defined
   acl:
     path: "{{ item.path }}"
     entity: "{{ libellum.user }}"
@@ -14,7 +15,7 @@
     state: present
   loop: "{{ libellum_certs.files }}"
 
-- name: Set extended attributes on cert file
+- name: Set extended group attributes on cert file
   when: libellum.group is defined
   acl:
     path: "{{ item.path }}"
@@ -31,7 +32,8 @@
   register: libellum_keys
   check_mode: false
 
-- name: Set extended attributes on key file
+- name: Set extended user attributes on key file
+  when: libellum.user is defined
   acl:
     path: "{{ item.path }}"
     entity: "{{ libellum.user }}"
@@ -40,7 +42,7 @@
     state: present
   loop: "{{ libellum_keys.files }}"
 
-- name: Set extended attributes on key file
+- name: Set extended group attributes on key file
   when: libellum.group is defined
   acl:
     path: "{{ item.path }}"

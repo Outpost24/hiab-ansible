@@ -1,5 +1,6 @@
 libellum:
   service: "TEDDY_SALAD"
   user: teddy-salad
+  group: teddy-salad
   cert: teddy-salad.crt
   key: teddy-salad.key
