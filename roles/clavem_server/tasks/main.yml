@@ -274,7 +274,6 @@
     file:
       path: "{{ item.dir }}/clavem/encryption.{{ item.ext }}.old"
       state: absent
-    register: deleted
     loop:
         - { ext: "crt", dir: "{{ tls_certificates_base_path }}" }
         - { ext: "key", dir: "{{ tls_keys_base_path }}" }
