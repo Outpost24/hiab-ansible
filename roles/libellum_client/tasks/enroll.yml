@@ -76,6 +76,14 @@
     - name: Using outscan account
       when: outscan.username is defined
       block:
+        - name: Two-factor authentication
+          check_mode: false
+          pause:
+            prompt: "Enter 2FA code, or leave empty if not used"
+            echo: no
+          register: mfa_auth
+          when: login_token is not defined
+
         - name: Login using outscan account
           uri:
             url: "https://{{ outscan.site_basehref }}/opi/rest/auth/login"
@@ -84,9 +92,17 @@
             body:
               username: "{{ outscan.username }}"
               password: "{{ vault_outscan_password }}"
+              code: "{{ mfa_auth['user_input']  }}"
             validate_certs: "{{ outscan.validate_certs|default('true') }}"
             return_content: true
           register: outscan_auth
+          when: login_token is not defined
+
+        - name: Cache login token
+          set_fact:
+            login_token: "{{ outscan_auth['content'] }}"
+            cacheable: yes
+          when: login_token is not defined
 
         - name: Create temporaty RPM directory
           check_mode: false
@@ -103,7 +119,7 @@
             method: POST
             headers:
               Content-Type: text/plain
-              Authorization: "Bearer {{ outscan_auth['content'] }}"
+              Authorization: "Bearer {{ login_token }}"
             body: "{{ libellum_csr['content'] | b64decode }}"
             dest: "{{ tmpdir.path }}/enroll.tar.gz"
             validate_certs: "{{ outscan.validate_certs|default('true') }}"
