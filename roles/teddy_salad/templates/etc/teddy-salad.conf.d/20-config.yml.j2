@@ -27,6 +27,10 @@ store:
     region: {{ teddy_salad.storage.region }}
     accessKeyId: {{ vault_teddy_salad_storage_id }}
     secretAccessKey: {{ vault_teddy_salad_storage_key }}
+{% if teddy_salad.storage.certificate_authority is defined %}
+    tls:
+      rootCa: {{ tls_certificates_base_path }}/object-storage.crt
+{% endif %}
     lifecycle:
       rules:
         - expiration:

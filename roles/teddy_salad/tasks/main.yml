@@ -182,6 +182,16 @@
     group: teddy-salad
     mode: 0640
 
+- name: Copy storage certificate authority
+  when: teddy_salad.storage.certificate_authority is defined and teddy_salad.storage.certificate_authority
+  ignore_errors: "{{ ansible_check_mode }}"
+  copy:
+    src: "{{ teddy_salad.storage.certificate_authority }}"
+    dest: "{{ tls_certificates_base_path }}/object-storage.crt"
+    owner: root
+    group: teddy-salad
+    mode: 0640
+
 - name: Enable the server
   systemd:
     daemon_reload: true
