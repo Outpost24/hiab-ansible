@@ -48,7 +48,7 @@
       changed_when: false
       shell: |
         set -o pipefail
-        openssl s_client -servername appliance -connect {{ inventory_hostname }}:443 </dev/null 2>/dev/null | sed -n -e '/BEGIN\ CERTIFICATE/,/END\ CERTIFICATE/ p' > {{ playbook_dir }}/files{{ tls_certificates_base_path }}/recipients/{{ inventory_hostname }}.crt # noqa 204
+        openssl s_client -servername appliance -connect {{ inventory_hostname }}:443 </dev/null 2>/dev/null | sed -n -e '/BEGIN\ CERTIFICATE/,/END\ CERTIFICATE/ p' > {{ playbook_dir }}/files{{ tls_certificates_base_path }}/recipients/{{ inventory_hostname }}.crt  # noqa 204
 
     - name: Concatenate recipients
       changed_when: false
