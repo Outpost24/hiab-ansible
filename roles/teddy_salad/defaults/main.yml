@@ -13,3 +13,6 @@ teddy_salad:
   ensure_commit:
     check: true
     fail: true
+
+retirement:
+  callHomeFrequency: 168h

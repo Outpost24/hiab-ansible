@@ -57,6 +57,13 @@ defaultAgentConfig:
   recipients:
     - {{ tls_certificates_base_path }}/recipients.crt
 
+{% if retirement.version is defined %}
+# config for the agent retirement
+retirement:
+  version: "{{ retirement.version }}"
+  callHomeFrequency: {{ retirement.callHomeFrequency }}
+{% endif %}
+
 # needed for agent certificates
 libellum:
   server: https://{{ libellum.server }}
