@@ -14,16 +14,17 @@
 
 - name: Install Clavem and pre-reqs
   package:
-    name: [ clavem-server, python2-psycopg2 ]
+    name: [clavem-server, python2-psycopg2]
     state: present
   when: clavem_update is not defined or not clavem_update
   notify:
     - restart clavem-server
 
+# yamllint disable-line rule:line-length
 - name: Update clavem and pre-reqs  # noqa 403 Skip rule for not using "state: latest" as this task's purpose is to update the package
   when: clavem_update is defined and clavem_update
   package:
-    name: [ clavem-server, python2-psycopg2 ]
+    name: [clavem-server, python2-psycopg2]
     state: latest
   notify:
     - restart clavem-server
@@ -178,6 +179,7 @@
     src: "{{ item }}"
     dest: "{{ inventory_files_dir }}{{ o24_libellum_keys_base_path }}/clavem/"
 
+# yamllint disable rule:line-length
 - name: Delegate to localhost
   run_once: true
   delegate_to: localhost
@@ -211,9 +213,9 @@
           - "{{ inventory_files_dir }}{{ item.dir }}/clavem/encryption.{{ item.ext }}.old"
           - "{{ inventory_files_dir }}{{ item.dir }}/clavem/encryption_{{ time }}.{{ item.ext }}"
       loop:
-        - { ext: "crt", dir: "{{ o24_libellum_certificates_base_path }}" }
-        - { ext: "key", dir: "{{ o24_libellum_keys_base_path }}" }
-        - { ext: "crt.csr", dir: "{{ o24_libellum_certificates_base_path }}" }
+        - {ext: "crt", dir: "{{ tls_certificates_base_path }}"}
+        - {ext: "key", dir: "{{ tls_keys_base_path }}"}
+        - {ext: "crt.csr", dir: "{{ tls_certificates_base_path }}"}
 
     - name: Ensure commit
       import_role:
@@ -256,28 +258,28 @@
 - name: Delete old cert on host
   when: old_cert_on_host.stat.exists
   block:
-  - name: Register current certs
-    find:
-      paths: "{{ tls_certificates_base_path }}/clavem"
-      get_checksum: true
-      patterns: "encryption*.crt"
-    register: current_certs
+    - name: Register current certs
+      find:
+        paths: "{{ tls_certificates_base_path }}/clavem"
+        get_checksum: true
+        patterns: "encryption*.crt"
+      register: current_certs
 
-  - name: Compare saved certs to old cert
-    loop: "{{ current_certs.files | map(attribute='checksum') | list }}"
-    when: old_cert_on_host.stat.checksum == item
-    set_fact:
-      delete_old_cert: true
+    - name: Compare saved certs to old cert
+      loop: "{{ current_certs.files | map(attribute='checksum') | list }}"
+      when: old_cert_on_host.stat.checksum == item
+      set_fact:
+        delete_old_cert: true
 
-  - name: Delete old certificate files
-    when: delete_old_cert
-    file:
-      path: "{{ item.dir }}/clavem/encryption.{{ item.ext }}.old"
-      state: absent
-    loop:
-        - { ext: "crt", dir: "{{ tls_certificates_base_path }}" }
-        - { ext: "key", dir: "{{ tls_keys_base_path }}" }
-        - { ext: "crt.csr", dir: "{{ tls_certificates_base_path }}" }
+    - name: Delete old certificate files
+      when: delete_old_cert
+      file:
+        path: "{{ item.dir }}/clavem/encryption.{{ item.ext }}.old"
+        state: absent
+      loop:
+        - {ext: "crt", dir: "{{ tls_certificates_base_path }}"}
+        - {ext: "key", dir: "{{ tls_keys_base_path }}"}
+        - {ext: "crt.csr", dir: "{{ tls_certificates_base_path }}"}
 
 - name: Exit playbook when crt.old does not exists on host in renamed format
   when: old_cert_on_host.stat.exists and not delete_old_cert

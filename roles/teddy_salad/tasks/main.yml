@@ -35,7 +35,7 @@
   notify:
     - restart teddy-salad
 
-- name: Update teddy-salad and pre-reqs  # noqa 403 Skip rule for not using "state: latest" as this task's purpose is to   update the package
+- name: Update teddy-salad and pre-reqs  # noqa 403 Skip rule for not using "state: latest" as this task's purpose is to update the package
   when: teddy_salad_update is defined and teddy_salad_update and teddy_salad.install is defined and teddy_salad.install
   package:
     name: [teddy-salad, python2-psycopg2]
