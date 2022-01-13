@@ -64,6 +64,20 @@ retirement:
 {% endif %}
   callHomeFrequency: {{ retirement.callHomeFrequency | default('168h') }}
 
+# config for the metrics
+{% if teddy_salad.metrics is defined %}
+metrics:
+  transport: "{{ teddy_salad.metrics.transport }}"
+{%   if teddy_salad.metrics.connections.interval is defined %}
+  connections:
+    interval: "{{ teddy_salad.metrics.connections.interval }}"
+{%   endif %}
+{%   if teddy_salad.metrics.enrolledAgents.interval is defined %}
+  enrolledAgents:
+    interval: "{{ teddy_salad.metrics.enrolledAgents.interval }}"
+{%   endif %}
+{% endif %}
+
 # needed for agent certificates
 libellum:
   server: https://{{ libellum.server }}
