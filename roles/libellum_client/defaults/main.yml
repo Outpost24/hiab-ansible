@@ -1,3 +1,4 @@
+---
 libellum:
   cert: "appliance.crt"
   key: "appliance.key"

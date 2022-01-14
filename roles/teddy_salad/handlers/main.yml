@@ -1,3 +1,4 @@
+---
 - name: restart teddy-salad
   service:
     name: teddy-salad

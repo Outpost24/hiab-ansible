@@ -1,3 +1,4 @@
+---
 - name: Install libellum via bootstrap
   when: bootstrap is defined and bootstrap
   block:
@@ -21,7 +22,7 @@
       patterns: "*.rpm"
     register: rpms
 
-  - name: Install RPMs # noqa 403
+  - name: Install RPMs  # noqa 403
     yum:
       name: "{{ rpms.files | map(attribute='path') | list }}"
       state: latest

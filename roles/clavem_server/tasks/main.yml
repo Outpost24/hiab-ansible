@@ -1,3 +1,4 @@
+---
 - name: Enroll certificates
   import_role:
     name: libellum_client
@@ -19,7 +20,7 @@
   notify:
     - restart clavem-server
 
-- name: Update clavem and pre-reqs # noqa 403 Skip rule for not using "state: latest" as this task's purpose is to update the package
+- name: Update clavem and pre-reqs  # noqa 403 Skip rule for not using "state: latest" as this task's purpose is to update the package
   when: clavem_update is defined and clavem_update
   package:
     name: [ clavem-server, python2-psycopg2 ]
@@ -43,7 +44,7 @@
   notify:
     - restart clavem-server
 
-- name: Create encryption certificate directories locally # noqa 208
+- name: Create encryption certificate directories locally  # noqa 208
   run_once: true
   delegate_to: localhost
   become: false

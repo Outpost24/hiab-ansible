@@ -1,3 +1,4 @@
+---
 - name: Enroll certificates
   when: teddy_salad.install is defined and teddy_salad.install
   import_role:
@@ -29,12 +30,12 @@
 - name: Install teddy-salad and pre-reqs
   when: (teddy_salad_update is not defined or not teddy_salad_update) and teddy_salad.install is defined and teddy_salad.install
   package:
-    name: [ teddy-salad, python2-psycopg2]
+    name: [ teddy-salad, python2-psycopg2 ]
     state: present
   notify:
     - restart teddy-salad
 
-- name: Update teddy-salad and pre-reqs # noqa 403 Skip rule for not using "state: latest" as this task's purpose is to   update the package
+- name: Update teddy-salad and pre-reqs  # noqa 403 Skip rule for not using "state: latest" as this task's purpose is to   update the package
   when: teddy_salad_update is defined and teddy_salad_update and teddy_salad.install is defined and teddy_salad.install
   package:
     name: [ teddy-salad, python2-psycopg2 ]
@@ -114,10 +115,10 @@
     - "{{ tls_keys_base_path }}"
 
 - name: Code signing certificate creation
-  when: teddy_salad.self_sign_code_signing is defined and teddy_salad.self_sign_code_signing and (codesigningcert.stat.exists is not defined or not codesigningcert.stat.exists) and teddy_salad.install is defined and teddy_salad.install # noqa 204
+  when: teddy_salad.self_sign_code_signing is defined and teddy_salad.self_sign_code_signing and (codesigningcert.stat.exists is not defined or not codesigningcert.stat.exists) and teddy_salad.install is defined and teddy_salad.install  # noqa 204
   run_once: true
   block:
-    - name: Create codesign certificate directories locally # noqa 208
+    - name: Create codesign certificate directories locally  # noqa 208
       delegate_to: localhost
       become: false
       file:
@@ -157,7 +158,7 @@
       vars:
         ensure_commit:
           gitdir: "{{ inventory_files_dir }}"
-          gitpaths: "{{ inventory_files_dir }}{{ tls_certificates_base_path }}/teddy-salad/codesign.crt {{ inventory_files_dir }}{{ tls_keys_base_path }}/teddy-salad/codesign.key" # noqa 204
+          gitpaths: "{{ inventory_files_dir }}{{ tls_certificates_base_path }}/teddy-salad/codesign.crt {{ inventory_files_dir }}{{ tls_keys_base_path }}/teddy-salad/codesign.key"  # noqa 204
           gitprompt: "Make sure you've committed the certificate and key we just created"
           check: "{{ teddy_salad.ensure_commit.check }}"
           fail: "{{ teddy_salad.ensure_commit.fail }}"

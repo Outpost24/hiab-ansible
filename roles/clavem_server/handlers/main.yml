@@ -1,3 +1,4 @@
+---
 - name: restart clavem-server
   service:
     name: clavem-server

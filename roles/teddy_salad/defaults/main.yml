@@ -1,3 +1,4 @@
+---
 teddy_salad:
   db:
     type: postgres

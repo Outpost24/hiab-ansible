@@ -44,40 +44,40 @@
 - name: Run replica tasks
   when: dbrole is defined and dbrole == "replica"
   block:
-  - name: Restore the data to replica (MAY TAKE SOME TIME!)
-    command: pg_basebackup -D /var/lib/pgsql/{{ psqlversion }}/data -h {{ dbmasterip }} -U postgres
-    become_user: postgres
-    become: true
-    args:
-      creates: "{{ psqlconfigfile }}"
-    tags:
-      - never
-      - restore
+    - name: Restore the data to replica (MAY TAKE SOME TIME!)
+      command: pg_basebackup -D /var/lib/pgsql/{{ psqlversion }}/data -h {{ dbmasterip }} -U postgres
+      become_user: postgres
+      become: true
+      args:
+        creates: "{{ psqlconfigfile }}"
+      tags:
+        - never
+        - restore
 
-  - name: Push config files for postgres (replica only)
-    loop:
-      - "postgresql.conf"
-      - "pg_hba.conf"
-    notify: restart postgresql
-    template:
-      src: "var/lib/pgsql/10/data/{{ item }}.j2"
-      dest: "/var/lib/pgsql/{{ psqlversion }}/data/{{ item }}"
-      mode: 0600
-      owner: postgres
-      group: postgres
-    tags:
-      - config
+    - name: Push config files for postgres (replica only)
+      loop:
+        - "postgresql.conf"
+        - "pg_hba.conf"
+      notify: restart postgresql
+      template:
+        src: "var/lib/pgsql/10/data/{{ item }}.j2"
+        dest: "/var/lib/pgsql/{{ psqlversion }}/data/{{ item }}"
+        mode: 0600
+        owner: postgres
+        group: postgres
+      tags:
+        - config
 
-  - name: Push recovery.conf to replicas
-    when: dbbackupip is defined
-    template:
-      src: var/lib/pgsql/10/data/recovery.conf.j2
-      dest: /var/lib/pgsql/{{ psqlversion }}/data/recovery.conf
-      mode: 0600
-      owner: postgres
-      group: postgres
-    tags:
-      - config
+    - name: Push recovery.conf to replicas
+      when: dbbackupip is defined
+      template:
+        src: var/lib/pgsql/10/data/recovery.conf.j2
+        dest: /var/lib/pgsql/{{ psqlversion }}/data/recovery.conf
+        mode: 0600
+        owner: postgres
+        group: postgres
+      tags:
+        - config
 
 - name: Ensure the PostgreSQL service is running
   service:

@@ -1,3 +1,4 @@
+---
 - name: Check if libellum is initialized
   check_mode: false
   stat:
@@ -15,7 +16,7 @@
   block:
     - name: Find operator certificate for this environment
       stat:
-        path: "{{ operator_tls_certificates_base_path | default(tls_certificates_base_path) }}/{{ hostvars[libellum.server_mgmt]['libellum']['role'] }}_{% if osenv is defined %}{{ osenv }}_{% endif %}operator.crt" # noqa 204
+        path: "{{ operator_tls_certificates_base_path | default(tls_certificates_base_path) }}/{{ hostvars[libellum.server_mgmt]['libellum']['role'] }}_{% if osenv is defined %}{{ osenv }}_{% endif %}operator.crt"  # noqa 204
       register: operatorcertificate
       delegate_to: localhost
       become: false
@@ -30,7 +31,7 @@
     manager: auto
 
 - name: Enroll libellum
-  when: "not libellum_cert_stat.stat.exists and (outscan.username is defined or operatorcertificate.stat.exists) or (( outscan_enroll_skip_install is not defined or not outscan_enroll_skip_install ) and 'service-custom-' not in (ansible_facts.packages|join(' ')))" # noqa 204
+  when: "not libellum_cert_stat.stat.exists and (outscan.username is defined or operatorcertificate.stat.exists) or (( outscan_enroll_skip_install is not defined or not outscan_enroll_skip_install ) and 'service-custom-' not in (ansible_facts.packages|join(' ')))"  # noqa 204
   block:
     - name: Libellum create csr
       command:
@@ -62,8 +63,8 @@
             body_format: json
             body:
               certificateSigningRequest: "{{ libellum_csr['content'] | b64decode }}"
-            client_cert: "{{ operator_tls_certificates_base_path | default(tls_certificates_base_path) }}/{{ hostvars[libellum.server_mgmt]['libellum']['role'] }}_{% if osenv is defined %}{{ osenv }}_{% endif %}operator.crt" # noqa 204
-            client_key: "{{ operator_tls_keys_base_path | default(tls_keys_base_path) }}/{{ hostvars[libellum.server_mgmt]['libellum']['role'] }}_{% if osenv is defined %}{{ osenv }}_{% endif %}operator.key" # noqa 204
+            client_cert: "{{ operator_tls_certificates_base_path | default(tls_certificates_base_path) }}/{{ hostvars[libellum.server_mgmt]['libellum']['role'] }}_{% if osenv is defined %}{{ osenv }}_{% endif %}operator.crt"  # noqa 204
+            client_key: "{{ operator_tls_keys_base_path | default(tls_keys_base_path) }}/{{ hostvars[libellum.server_mgmt]['libellum']['role'] }}_{% if osenv is defined %}{{ osenv }}_{% endif %}operator.key"  # noqa 204
             validate_certs: false
           become: false
           register: libellum_crt
@@ -80,7 +81,7 @@
           check_mode: false
           pause:
             prompt: "Enter 2FA code, or leave empty if not used"
-            echo: no
+            echo: false
           register: mfa_auth
           when: login_token is not defined
 
@@ -101,7 +102,7 @@
         - name: Cache login token
           set_fact:
             login_token: "{{ outscan_auth['content'] }}"
-            cacheable: yes
+            cacheable: true
           when: login_token is not defined
 
         - name: Create temporaty RPM directory
@@ -184,7 +185,7 @@
       - "{% if libellum.sans is defined %}--sans={{ libellum.sans | join(',') }}{% endif %}"
       - "{% if not local_config.stat.exists %}--passphrase={{ libellum.passphrase | default('') }}{% endif %}"
   register: result
-  failed_when: "result.rc != 0 and result.rc != 2" # 0 on successful renewal, 2 on not time to renew
+  failed_when: "result.rc != 0 and result.rc != 2"  # 0 on successful renewal, 2 on not time to renew
   changed_when: "result.rc != 2"
 
 - name: Unset local config variable

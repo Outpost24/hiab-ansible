@@ -1,3 +1,4 @@
+---
 - name: Find cert files
   find:
     paths: "{{ tls_certificates_base_path }}"

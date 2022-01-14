@@ -1,3 +1,4 @@
+---
 - name: Check git diff and ls-files
   when: ensure_commit.check
   changed_when: gitdiff.stdout

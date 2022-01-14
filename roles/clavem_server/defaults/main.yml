@@ -1,3 +1,4 @@
+---
 clavem:
   confdir: /etc/clavem.conf.d/
   allowed_services:
