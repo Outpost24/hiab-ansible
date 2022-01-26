@@ -65,6 +65,7 @@ libellum:
 listen: {{ teddy_salad.ip | default('0.0.0.0') }}:{{ teddy_salad.port | default('5046') }}
 
 tlsconfig:
+  insecureSkipVerify: {{ tls_config.insecure_skip_verify | default('true') }}
   ciphersuites: {{ ssl_ciphers }}
   ciphersuitesstrictsupported: null
   curvepreferences:
