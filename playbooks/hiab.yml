@@ -54,7 +54,7 @@
       changed_when: false
       shell: |
         find {{ playbook_dir }}/files{{ tls_certificates_base_path }}/recipients/ \
-          {{ inventory_files_dir }}{{ tls_certificates_base_path }}/clavem -type f -name "*.crt" -exec sed -n '1,/---END/p' {} \; \
+          {{ inventory_files_dir }}{{ o24_libellum_certificates_base_path }}/clavem -type f -name "*.crt" -exec sed -n '1,/---END/p' {} \; \
           > {{ playbook_dir }}/files{{ tls_certificates_base_path }}/recipients.crt
       run_once: true
       become: false

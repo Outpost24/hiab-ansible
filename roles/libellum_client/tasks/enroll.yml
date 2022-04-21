@@ -2,7 +2,7 @@
 - name: Check if libellum is initialized
   check_mode: false
   stat:
-    path: "{{ tls_certificates_base_path }}/{{ libellum.cert }}"
+    path: "{{ o24_libellum_certificates_base_path }}/{{ libellum.cert }}"
   register: libellum_cert_stat
 
 - name: Check for local config
@@ -16,7 +16,7 @@
   block:
     - name: Find operator certificate for this environment
       stat:
-        path: "{{ operator_tls_certificates_base_path | default(tls_certificates_base_path) }}/{{ hostvars[libellum.server_mgmt]['libellum']['role'] }}_{% if osenv is defined %}{{ osenv }}_{% endif %}operator.crt"  # noqa 204
+        path: "{{ operator_tls_certificates_base_path | default(o24_libellum_certificates_base_path) }}/{{ hostvars[libellum.server_mgmt]['libellum']['role'] }}_{% if osenv is defined %}{{ osenv }}_{% endif %}operator.crt"  # noqa 204
       register: operatorcertificate
       delegate_to: localhost
       become: false
@@ -34,6 +34,7 @@
   when: "not libellum_cert_stat.stat.exists and (outscan.username is defined or operatorcertificate.stat.exists) or (( outscan_enroll_skip_install is not defined or not outscan_enroll_skip_install ) and 'service-custom-' not in (ansible_facts.packages|join(' ')))"  # noqa 204
   block:
     - name: Libellum create csr
+      when: not ansible_check_mode
       command:
         argv:
           - /usr/bin/libellum
@@ -41,15 +42,15 @@
           - create-csr
           - --stderr-log
           - "--service={{ libellum.service }}"
-          - "--certificate={{ tls_certificates_base_path }}/{{ libellum.cert }}"
-          - "--key={{ tls_keys_base_path }}/{{ libellum.key }}"
+          - "--certificate={{ o24_libellum_certificates_base_path }}/{{ libellum.cert }}"
+          - "--key={{ o24_libellum_keys_base_path }}/{{ libellum.key }}"
           - "--sans={% if libellum.sans is defined %}{{ libellum.sans | join(',') }}{% endif %}"
           - "{% if not local_config.stat.exists %}--passphrase={{ libellum.passphrase | default('') }}{% endif %}"
 
     - name: Slurp libellum csr
       when: not ansible_check_mode
       slurp:
-        src: "{{ tls_certificates_base_path }}/{{ libellum.cert }}.csr.new"
+        src: "{{ o24_libellum_certificates_base_path }}/{{ libellum.cert }}.csr.new"
       register: libellum_csr
 
     - name: Using operator certificate
@@ -63,8 +64,8 @@
             body_format: json
             body:
               certificateSigningRequest: "{{ libellum_csr['content'] | b64decode }}"
-            client_cert: "{{ operator_tls_certificates_base_path | default(tls_certificates_base_path) }}/{{ hostvars[libellum.server_mgmt]['libellum']['role'] }}_{% if osenv is defined %}{{ osenv }}_{% endif %}operator.crt"  # noqa 204
-            client_key: "{{ operator_tls_keys_base_path | default(tls_keys_base_path) }}/{{ hostvars[libellum.server_mgmt]['libellum']['role'] }}_{% if osenv is defined %}{{ osenv }}_{% endif %}operator.key"  # noqa 204
+            client_cert: "{{ operator_tls_certificates_base_path | default(o24_libellum_certificates_base_path) }}/{{ hostvars[libellum.server_mgmt]['libellum']['role'] }}_{% if osenv is defined %}{{ osenv }}_{% endif %}operator.crt"  # noqa 204
+            client_key: "{{ operator_tls_keys_base_path | default(o24_libellum_keys_base_path) }}/{{ hostvars[libellum.server_mgmt]['libellum']['role'] }}_{% if osenv is defined %}{{ osenv }}_{% endif %}operator.key"  # noqa 204
             validate_certs: false
           become: false
           register: libellum_crt
@@ -72,7 +73,8 @@
         - name: Copy enrolled libellum certificate
           copy:
             content: "{{ libellum_crt.json.certificate }}"
-            dest: "{{ tls_certificates_base_path }}/{{ libellum.cert }}.new"
+            dest: "{{ o24_libellum_certificates_base_path }}/{{ libellum.cert }}.new"
+            mode: 0644
 
     - name: Using outscan account
       when: outscan.username is defined
@@ -147,7 +149,8 @@
             disable_gpg_check: true
 
         - name: Move enrolled libellum certificate
-          command: mv "{{ tmpdir.path }}/service.crt" "{{ tls_certificates_base_path }}/{{ libellum.cert }}.new"
+          when: not ansible_check_mode
+          command: mv "{{ tmpdir.path }}/service.crt" "{{ o24_libellum_certificates_base_path }}/{{ libellum.cert }}.new"
 
         - name: Delete temporary RPM directory
           file:
@@ -155,14 +158,15 @@
             state: absent
 
     - name: Register libellum certificate
+      when: not ansible_check_mode
       command:
         argv:
           - /usr/bin/libellum
           - enroll
           - register-crt
           - --stderr-log
-          - "--certificate={{ tls_certificates_base_path }}/{{ libellum.cert }}"
-          - "--key={{ tls_keys_base_path }}/{{ libellum.key }}"
+          - "--certificate={{ o24_libellum_certificates_base_path }}/{{ libellum.cert }}"
+          - "--key={{ o24_libellum_keys_base_path }}/{{ libellum.key }}"
           - "--passphrase={% if not local_config.stat.exists %}{{ libellum.passphrase | default('') }}{% endif %}"
 
 - name: Check for local config
@@ -180,8 +184,8 @@
       - "{% if local_config.stat.exists %}--settings=/etc/libellum_{{ libellum.service }}.conf.d/{% endif %}"
       - "{% if not local_config.stat.exists %}--server=https://{{ libellum.server }}{% endif %}"
       - "--service={{ libellum.service }}"
-      - "--certificate={{ tls_certificates_base_path }}/{{ libellum.cert }}"
-      - "--key={{ tls_keys_base_path }}/{{ libellum.key }}"
+      - "--certificate={{ o24_libellum_certificates_base_path }}/{{ libellum.cert }}"
+      - "--key={{ o24_libellum_keys_base_path }}/{{ libellum.key }}"
       - "{% if libellum.sans is defined %}--sans={{ libellum.sans | join(',') }}{% endif %}"
       - "{% if not local_config.stat.exists %}--passphrase={{ libellum.passphrase | default('') }}{% endif %}"
   register: result

@@ -1,0 +1,28 @@
+---
+- name: Create directory
+  loop:
+    - "{{ o24_libellum_keys_base_path }}"
+    - "{{ o24_libellum_certificates_base_path }}"
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+
+- name: Migrate certificates from old location to new
+  loop:
+    - "{{ libellum.cert }}"
+    - "{{ libellum.client_ca }}"
+    - "{{ global_root_certificate }}"
+    - "{{ repository_certificate }}"
+  include_tasks: move_and_link.yml
+  vars:
+    from_base_path: "{{ tls_certificates_base_path }}"
+    to_base_path: "{{ o24_libellum_certificates_base_path }}"
+
+- name: Migrate keys from old location to new
+  loop:
+    - "{{ libellum.key }}"
+  include_tasks: move_and_link.yml
+  vars:
+    from_base_path: "{{ tls_keys_base_path }}"
+    to_base_path: "{{ o24_libellum_keys_base_path }}"

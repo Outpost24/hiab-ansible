@@ -1,0 +1,20 @@
+---
+- name: Check for present file
+  stat:
+    path: "{{ from_base_path }}/{{ item }}"
+  register: existing_file
+
+- name: Move and symlink certificate
+  when: existing_file.stat.exists and not existing_file.stat.islnk
+  block:
+    - name: Move if exists and is not link
+      command:
+        cmd: mv "{{ from_base_path }}/{{ item }}" "{{ to_base_path }}/{{ item }}"
+        removes: "{{ from_base_path }}/{{ item }}"
+        creates: "{{ to_base_path }}/{{ item }}"
+
+    - name: Link old file to_base_path new if moved
+      file:
+        src: "{{ to_base_path }}/{{ item }}"
+        dest: "{{ from_base_path }}/{{ item }}"
+        state: link

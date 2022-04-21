@@ -2,37 +2,37 @@
 - name: Install libellum via bootstrap
   when: bootstrap is defined and bootstrap
   block:
-  - name: Create temporaty RPM directory
-    check_mode: false
-    tempfile:
-      path: /root/
-      prefix: "ansible."
-      state: directory
-    register: tmpdir
+    - name: Create temporary RPM directory
+      check_mode: false
+      tempfile:
+        path: /root/
+        prefix: "ansible."
+        state: directory
+      register: tmpdir
 
-  - name: Copy RPMs
-    copy:
-      mode: 0600
-      src: bootstrap_rpms/
-      dest: "{{ tmpdir.path }}"
+    - name: Copy RPMs
+      copy:
+        mode: 0600
+        src: bootstrap_rpms/
+        dest: "{{ tmpdir.path }}"
 
-  - name: Register copied files
-    find:
-      paths: "{{ tmpdir.path }}"
-      patterns: "*.rpm"
-    register: rpms
+    - name: Register copied files
+      find:
+        paths: "{{ tmpdir.path }}"
+        patterns: "*.rpm"
+      register: rpms
 
-  - name: Install RPMs  # noqa 403
-    yum:
-      name: "{{ rpms.files | map(attribute='path') | list }}"
-      state: latest
-      disable_gpg_check: true
+    - name: Install RPMs  # noqa 403
+      yum:
+        name: "{{ rpms.files | map(attribute='path') | list }}"
+        state: latest
+        disable_gpg_check: true
 
-  - name: Delete temporary RPM directory
-    check_mode: false
-    file:
-      path: "{{ tmpdir.path }}"
-      state: absent
+    - name: Delete temporary RPM directory
+      check_mode: false
+      file:
+        path: "{{ tmpdir.path }}"
+        state: absent
 
 - name: Install Libellum
   when: bootstrap is not defined or not bootstrap
@@ -56,20 +56,21 @@
     group: root
     mode: 0644
 
+- import_tasks: migrate.yml
 - import_tasks: enroll.yml
 
 - name: Get client CA from libellum server
   when: outscan.username is not defined
   delegate_to: "{{ libellum.server_mgmt }}"
   slurp:
-    src: "{{ tls_certificates_base_path }}/{{ libellum.client_ca }}"
+    src: "{{ o24_libellum_certificates_base_path }}/{{ libellum.client_ca }}"
   register: libellum_client_ca
 
 - name: Push client CA to client
   when: outscan.username is not defined
   copy:
     content: "{{ libellum_client_ca['content'] | b64decode }}"
-    dest: "{{ tls_certificates_base_path }}/{{ libellum.client_ca }}"
+    dest: "{{ o24_libellum_certificates_base_path }}/{{ libellum.client_ca }}"
     owner: root
     group: root
     mode: "0644"
@@ -78,14 +79,14 @@
   when: outscan.username is not defined
   delegate_to: "{{ libellum.server_mgmt }}"
   slurp:
-    src: "{{ tls_certificates_base_path }}/{{ global_root_certificate }}"
+    src: "{{ o24_libellum_certificates_base_path }}/{{ global_root_certificate }}"
   register: outpost24_global_crt
 
 - name: Copy global certificate
   when: outscan.username is not defined
   copy:
     content: "{{ outpost24_global_crt['content'] | b64decode }}"
-    dest: "{{ tls_certificates_base_path }}/{{ global_root_certificate }}"
+    dest: "{{ o24_libellum_certificates_base_path }}/{{ global_root_certificate }}"
     owner: root
     group: root
     mode: "0644"
@@ -94,14 +95,14 @@
   when: outscan.username is not defined
   copy:
     content: "{{ libellum_client_ca['content'] | b64decode }}{{ outpost24_global_crt['content'] | b64decode }}"
-    dest: "{{ tls_certificates_base_path }}/{{ repository_certificate }}"
+    dest: "{{ o24_libellum_certificates_base_path }}/{{ repository_certificate }}"
     owner: root
     group: root
     mode: "0644"
 
 - name: Check if appliance.crt already exists and is a file
   stat:
-    path: "{{ tls_certificates_base_path }}/appliance.crt"
+    path: "{{ o24_libellum_certificates_base_path }}/appliance.crt"
   register: app_crt
 
 - name: Check that link target exists
@@ -115,10 +116,10 @@
     not app_crt.stat.exists or
     ((app_link_target.skipped is not defined or not app_link_target.skipped) and
     app_link_target.stat.exists and
-    (app_link_target.stat.path is regex('^' + tls_certificates_base_path + '\/.*\.crt$')))
+    (app_link_target.stat.path is regex('^' + o24_libellum_certificates_base_path + '\/.*\.crt$')))
   file:
-    src: "{{ tls_certificates_base_path }}/{{ libellum.cert }}"
-    dest: "{{ tls_certificates_base_path }}/appliance.crt"
+    src: "{{ o24_libellum_certificates_base_path }}/{{ libellum.cert }}"
+    dest: "{{ o24_libellum_certificates_base_path }}/appliance.crt"
     force: false
     group: root
     owner: root
@@ -126,7 +127,7 @@
 
 - name: Check if appliance.key already exists and is a file
   stat:
-    path: "{{ tls_keys_base_path }}/appliance.key"
+    path: "{{ o24_libellum_keys_base_path }}/appliance.key"
   register: app_key
 
 - name: Check that link target key exists
@@ -140,10 +141,10 @@
     not app_key.stat.exists or
     ((app_link_target_key.skipped is not defined or not app_link_target_key.skipped) and
     app_link_target_key.stat.exists and
-    (app_link_target_key.stat.path is regex('^' + tls_keys_base_path + '\/.*\.key$')))
+    (app_link_target_key.stat.path is regex('^' + o24_libellum_keys_base_path + '\/.*\.key$')))
   file:
-    src: "{{ tls_keys_base_path }}/{{ libellum.key }}"
-    dest: "{{ tls_keys_base_path }}/appliance.key"
+    src: "{{ o24_libellum_keys_base_path }}/{{ libellum.key }}"
+    dest: "{{ o24_libellum_keys_base_path }}/appliance.key"
     force: false
     group: root
     owner: root

@@ -18,7 +18,7 @@ clientAuth:
 {% endfor %}
   # the root certificates to use as trust for incoming connections
   roots:
-  - {{ tls_certificates_base_path }}/{{ libellum.client_ca }}
+  - {{ o24_libellum_certificates_base_path }}/{{ libellum.client_ca }}
 
 # store url
 store:
@@ -53,7 +53,7 @@ defaultAgentConfig:
     - secp256r1
     - secp384r1
     minversion: TLS1.2
-    rootca: {{ tls_certificates_base_path }}/{{ libellum.root_ca }}
+    rootca: {{ o24_libellum_certificates_base_path }}/{{ libellum.root_ca }}
   recipients:
     - {{ tls_certificates_base_path }}/recipients.crt
 
@@ -96,11 +96,11 @@ tlsconfig:
   minversion: TLS1.2
   clientauth: RequestClientCert
   certificate:
-    certificate: {{ tls_certificates_base_path }}/{{ libellum.cert }}
-    privatekey: {{ tls_keys_base_path }}/{{ libellum.key }}
+    certificate: {{ o24_libellum_certificates_base_path }}/{{ libellum.cert }}
+    privatekey: {{ o24_libellum_keys_base_path }}/{{ libellum.key }}
     passphrase: null
-  rootca: {{ tls_certificates_base_path }}/{{ libellum.root_ca }}
-  clientca: {{ tls_certificates_base_path }}/{{ libellum.client_ca }}
+  rootca: {{ o24_libellum_certificates_base_path }}/{{ libellum.root_ca }}
+  clientca: {{ o24_libellum_certificates_base_path }}/{{ libellum.client_ca }}
 
 codeSigningCertificate:
   certificate: {{ tls_certificates_base_path }}/teddy-salad/codesign.crt

@@ -14,8 +14,8 @@ tlsconfig:
   minversion: TLS1.2
   clientauth: RequestClientCert
   certificates:
-    - certificate: {{ tls_certificates_base_path }}/{{ libellum.cert }}
-      privatekey: {{ tls_keys_base_path }}/{{ libellum.key }}
+    - certificate: {{ o24_libellum_certificates_base_path }}/{{ libellum.cert }}
+      privatekey: {{ o24_libellum_keys_base_path }}/{{ libellum.key }}
       passphrase: {{ libellum.passphrase | to_nice_json }}
-  rootca: {{ tls_certificates_base_path }}/{{ libellum.root_ca | default('outscan.crt') }}
-  clientca: {{ tls_certificates_base_path }}/{{ libellum.client_ca | default('outscan.crt') }}
+  rootca: {{ o24_libellum_certificates_base_path }}/{{ libellum.root_ca | default('outscan.crt') }}
+  clientca: {{ o24_libellum_certificates_base_path }}/{{ libellum.client_ca | default('outscan.crt') }}

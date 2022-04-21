@@ -1,7 +1,7 @@
 ---
 - name: Find cert files
   find:
-    paths: "{{ tls_certificates_base_path }}"
+    paths: "{{ o24_libellum_certificates_base_path }}"
     patterns: "{{ libellum.cert }}*"
   register: libellum_certs
   check_mode: false
@@ -28,7 +28,7 @@
 
 - name: Find key files
   find:
-    paths: "{{ tls_keys_base_path }}"
+    paths: "{{ o24_libellum_keys_base_path }}"
     patterns: "{{ libellum.key }}*"
   register: libellum_keys
   check_mode: false
