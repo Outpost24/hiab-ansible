@@ -10,11 +10,11 @@ identityAuth:
   maxPathLength: 2
   # the root certificates to use as trust for incoming connections
   roots:
-    - {{ tls_certificates_base_path }}/{{ libellum.client_ca | default('outscan.crt') }}
+    - {{ o24_libellum_certificates_base_path }}/{{ libellum.client_ca | default('outscan.crt') }}
 
 # directory where certificates and keys used for shared encryption
-certificates: {{ tls_certificates_base_path }}/clavem
-keys: {{ tls_keys_base_path }}/clavem
+certificates: {{ o24_libellum_certificates_base_path }}
+keys: {{ o24_libellum_keys_base_path }}
 passphrase: {{ vault_clavem_encryption_key_passphrase | to_nice_json }}
 
 # the address to listen on
@@ -30,6 +30,6 @@ tls:
   minversion: TLS1.2
   clientauth: RequestClientCert
   certificates:
-    - certificate: {{ tls_certificates_base_path }}/{{ libellum.cert }}
-      privatekey: {{ tls_keys_base_path }}/{{ libellum.key }}
-  clientca: {{ tls_certificates_base_path }}/{{ libellum.client_ca | default('outscan.crt') }}
+    - certificate: {{ o24_libellum_certificates_base_path }}/{{ libellum.cert }}
+      privatekey: {{ o24_libellum_keys_base_path }}/{{ libellum.key }}
+  clientca: {{ o24_libellum_certificates_base_path }}/{{ libellum.client_ca | default('outscan.crt') }}
