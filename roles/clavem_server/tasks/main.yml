@@ -143,8 +143,8 @@
       cert: "encryption.crt"
       key: "encryption.key"
       passphrase: "{{ vault_clavem_encryption_key_passphrase }}"
-    tls_certificates_base_path: "{{ o24_libellum_certificates_base_path }}/clavem"
-    tls_keys_base_path: "{{ o24_libellum_keys_base_path }}/clavem"
+    o24_libellum_certificates_base_path: "{{ operator_tls_certificates_base_path }}/clavem"
+    o24_libellum_keys_base_path: "{{ operator_tls_libellum_keys_base_path }}/clavem"
 
 - name: Find encryption certificates
   when: not ansible_check_mode
