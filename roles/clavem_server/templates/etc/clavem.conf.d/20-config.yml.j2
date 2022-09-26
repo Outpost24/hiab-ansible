@@ -13,8 +13,8 @@ identityAuth:
     - {{ o24_libellum_certificates_base_path }}/{{ libellum.client_ca | default('outscan.crt') }}
 
 # directory where certificates and keys used for shared encryption
-certificates: {{ o24_libellum_certificates_base_path }}
-keys: {{ o24_libellum_keys_base_path }}
+certificates: {{ o24_libellum_certificates_base_path }}/clavem
+keys: {{ o24_libellum_keys_base_path }}/clavem
 passphrase: {{ vault_clavem_encryption_key_passphrase | to_nice_json }}
 
 # the address to listen on
