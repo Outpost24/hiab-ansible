@@ -21,15 +21,16 @@ passphrase: {{ vault_clavem_encryption_key_passphrase | to_nice_json }}
 listen: {{ clavem.ip | default('0.0.0.0') }}:{{ clavem.port | default('5044') }}
 
 tls:
-  ciphersuites: {{ ssl_ciphers }}
-  ciphersuitesstrictsupported: null
-  curvepreferences:
+  cipherSuites: {{ ssl_ciphers }}
+  cipherSuitesStrictSupported: null
+  curvePreferences:
   - x25519
   - secp256r1
   - secp384r1
-  minversion: TLS1.2
-  clientauth: RequestClientCert
+  minVersion: TLS1.2
+  clientAuth: RequestClientCert
   certificates:
     - certificate: {{ o24_libellum_certificates_base_path }}/{{ libellum.cert }}
       privatekey: {{ o24_libellum_keys_base_path }}/{{ libellum.key }}
-  clientca: {{ o24_libellum_certificates_base_path }}/{{ libellum.client_ca | default('outscan.crt') }}
+      passphrase: {{ vault_clavem_encryption_key_passphrase | to_nice_json }}
+  clientCa: {{ o24_libellum_certificates_base_path }}/{{ libellum.client_ca | default('outscan.crt') }}
