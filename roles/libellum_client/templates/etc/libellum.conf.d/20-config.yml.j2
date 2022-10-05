@@ -4,18 +4,18 @@ libellum:
 {% endif %}
   renew: {{ libellum.renew | default('4320h') }}
 
-tlsconfig:
-  ciphersuites: ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA384
-  ciphersuitesstrictsupported: null
-  curvepreferences:
+tlsConfig:
+  cipherSuites: ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA384
+  cipherSuitesStrictSupported: null
+  curvePreferences:
   - x25519
   - secp256r1
   - secp384r1
-  minversion: TLS1.2
-  clientauth: RequestClientCert
+  minVersion: TLS1.2
+  clientAuth: RequestClientCert
   certificates:
     - certificate: {{ o24_libellum_certificates_base_path }}/{{ libellum.cert }}
-      privatekey: {{ o24_libellum_keys_base_path }}/{{ libellum.key }}
+      privateKey: {{ o24_libellum_keys_base_path }}/{{ libellum.key }}
       passphrase: {{ libellum.passphrase | to_nice_json }}
-  rootca: {{ o24_libellum_certificates_base_path }}/{{ libellum.root_ca | default('outscan.crt') }}
-  clientca: {{ o24_libellum_certificates_base_path }}/{{ libellum.client_ca | default('outscan.crt') }}
+  rootCa: {{ o24_libellum_certificates_base_path }}/{{ libellum.root_ca | default('outscan.crt') }}
+  clientCa: {{ o24_libellum_certificates_base_path }}/{{ libellum.client_ca | default('outscan.crt') }}
