@@ -31,6 +31,5 @@ tls:
   clientAuth: RequestClientCert
   certificates:
     - certificate: {{ o24_libellum_certificates_base_path }}/{{ libellum.cert }}
-      privatekey: {{ o24_libellum_keys_base_path }}/{{ libellum.key }}
-      passphrase: {{ vault_clavem_encryption_key_passphrase | to_nice_json }}
+      privateKey: {{ o24_libellum_keys_base_path }}/{{ libellum.key }}
   clientCa: {{ o24_libellum_certificates_base_path }}/{{ libellum.client_ca | default('outscan.crt') }}
