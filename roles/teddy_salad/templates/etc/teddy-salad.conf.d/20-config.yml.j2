@@ -1,7 +1,7 @@
 # set the database to be used
 database:
   # max number of connections. the code works with as little as one but can be increased for performance
-  maxopenconns: {{ teddy_salad.db.conns | default(10) }}
+  maxOpenConns: {{ teddy_salad.db.conns | default(10) }}
   # the type of database sqlite3 or postgres
   type: {{ teddy_salad.db.type }}
   # the uri / connect string to use when connecting to the database
@@ -46,14 +46,14 @@ defaultAgentConfig:
     - url: https://{{ endpoint }}
 {% endfor %}
   tls:
-    ciphersuites: {{ ssl_ciphers }}
-    ciphersuitesstrictsupported: null
-    curvepreferences:
+    cipherSuites: {{ ssl_ciphers }}
+    cipherSuitesStrictSupported: null
+    curvePreferences:
     - x25519
     - secp256r1
     - secp384r1
-    minversion: TLS1.2
-    rootca: {{ o24_libellum_certificates_base_path }}/{{ libellum.root_ca }}
+    minVersion: TLS1.2
+    rootCa: {{ o24_libellum_certificates_base_path }}/{{ libellum.root_ca }}
   recipients:
     - {{ tls_certificates_base_path }}/recipients.crt
 
@@ -85,22 +85,22 @@ libellum:
 # the address to listen on
 listen: {{ teddy_salad.ip | default('0.0.0.0') }}:{{ teddy_salad.port | default('5046') }}
 
-tlsconfig:
+tlsConfig:
   insecureSkipVerify: {{ tls_config.insecure_skip_verify | default('true') }}
-  ciphersuites: {{ ssl_ciphers }}
-  ciphersuitesstrictsupported: null
-  curvepreferences:
+  cipherSuites: {{ ssl_ciphers }}
+  cipherSuitesStrictSupported: null
+  curvePreferences:
   - x25519
   - secp256r1
   - secp384r1
-  minversion: TLS1.2
-  clientauth: RequestClientCert
+  minVersion: TLS1.2
+  clientAuth: RequestClientCert
   certificate:
     certificate: {{ o24_libellum_certificates_base_path }}/{{ libellum.cert }}
-    privatekey: {{ o24_libellum_keys_base_path }}/{{ libellum.key }}
+    privateKey: {{ o24_libellum_keys_base_path }}/{{ libellum.key }}
     passphrase: null
-  rootca: {{ o24_libellum_certificates_base_path }}/{{ libellum.root_ca }}
-  clientca: {{ o24_libellum_certificates_base_path }}/{{ libellum.client_ca }}
+  rootCa: {{ o24_libellum_certificates_base_path }}/{{ libellum.root_ca }}
+  clientCa: {{ o24_libellum_certificates_base_path }}/{{ libellum.client_ca }}
 
 codeSigningCertificate:
   certificate: {{ tls_certificates_base_path }}/teddy-salad/codesign.crt
