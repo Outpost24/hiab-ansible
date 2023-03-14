@@ -22,7 +22,7 @@
         patterns: "*.rpm"
       register: rpms
 
-    - name: Install RPMs  # noqa 403
+    - name: Install RPMs  # noqa package-latest
       yum:
         name: "{{ rpms.files | map(attribute='path') | list }}"
         state: latest
@@ -56,8 +56,8 @@
     group: root
     mode: 0644
 
-- import_tasks: migrate.yml
-- import_tasks: enroll.yml
+- import_tasks: migrate.yml  # noqa name[missing]
+- import_tasks: enroll.yml  # noqa name[missing]
 
 - name: Get client CA from libellum server
   when: outscan.username is not defined

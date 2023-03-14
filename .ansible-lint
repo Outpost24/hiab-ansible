@@ -1,0 +1,17 @@
+skip_list:
+  - meta-no-info
+  - risky-file-permissions
+  - no-log-password
+  - no-changed-when
+  - ignore-errors
+  - no-jinja-nesting
+  - fqcn
+  - name[casing]
+  - role-name[path]
+  - schema[meta]
+  - schema[playbook]
+  - run-once[task]
+exclude_paths:
+  - .cache
+  - .github
+  - collections

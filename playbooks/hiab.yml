@@ -34,7 +34,7 @@
   hosts: hiab
   gather_facts: false
   tasks:
-    - name: Create recipient directories  # noqa 208
+    - name: Create recipient directories  # noqa risky-file-permissions
       run_once: true
       delegate_to: localhost
       become: false

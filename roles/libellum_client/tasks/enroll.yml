@@ -87,7 +87,7 @@
           register: mfa_auth
           when: login_token is not defined
 
-        - name: Login using outscan account
+        - name: Login using outscan account  # noqa jinja[spacing]
           uri:
             url: "https://{{ outscan.site_basehref }}/opi/rest/auth/login"
             method: POST
@@ -96,7 +96,7 @@
               username: "{{ outscan.username }}"
               password: "{{ vault_outscan_password }}"
               code: "{{ mfa_auth['user_input']  }}"
-            validate_certs: "{{ outscan.validate_certs|default('true') }}"
+            validate_certs: "{{ outscan.validate_certs | default('true') }}"
             return_content: true
           register: outscan_auth
           when: login_token is not defined
@@ -125,7 +125,7 @@
               Authorization: "Bearer {{ login_token }}"
             body: "{{ libellum_csr['content'] | b64decode }}"
             dest: "{{ tmpdir.path }}/enroll.tar.gz"
-            validate_certs: "{{ outscan.validate_certs|default('true') }}"
+            validate_certs: "{{ outscan.validate_certs | default('true') }}"
 
         - name: Unpack archive
           when: not ansible_check_mode
