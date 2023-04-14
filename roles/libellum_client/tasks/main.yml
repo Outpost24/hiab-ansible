@@ -58,6 +58,8 @@
 
 - import_tasks: migrate.yml  # noqa name[missing]
 - import_tasks: enroll.yml  # noqa name[missing]
+  tags:
+    - libellum-enroll
 
 - name: Get client CA from libellum server
   when: outscan.username is not defined

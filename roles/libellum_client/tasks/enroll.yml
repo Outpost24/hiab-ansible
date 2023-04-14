@@ -5,6 +5,12 @@
     path: "{{ o24_libellum_certificates_base_path }}/{{ libellum.cert }}"
   register: libellum_cert_stat
 
+- name: Get certificate info
+  when: libellum_cert_stat.stat.exists
+  openssl_certificate_info:
+    path: "{{ o24_libellum_certificates_base_path }}/{{ libellum.cert }}"
+  register: libellum_cert_info
+
 - name: Check for local config
   check_mode: false
   stat:
@@ -31,7 +37,7 @@
     manager: auto
 
 - name: Enroll libellum
-  when: "not libellum_cert_stat.stat.exists and (outscan.username is defined or operatorcertificate.stat.exists) or (( outscan_enroll_skip_install is not defined or not outscan_enroll_skip_install ) and 'service-custom-' not in (ansible_facts.packages|join(' ')))"  # noqa 204
+  when: "((not libellum_cert_stat.stat.exists or libellum_cert_info.expired) and (outscan.username is defined or operatorcertificate.stat.exists)) or (( outscan_enroll_skip_install is not defined or not outscan_enroll_skip_install ) and 'service-custom-' not in (ansible_facts.packages|join(' ')))"  # noqa 204
   block:
     - name: Libellum create csr
       when: not ansible_check_mode
