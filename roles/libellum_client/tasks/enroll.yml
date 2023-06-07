@@ -36,11 +36,28 @@
   package_facts:
     manager: auto
 
+- name: Initialize proxy_env variable
+  set_fact:
+    proxy_env: {}
+
+- name: Lookup proxy
+  loop:
+    - HTTP_PROXY
+    - HTTPS_PROXY
+    - NO_PROXY
+    - http_proxy
+    - https_proxy
+    - no_proxy
+  when: "lookup('env', item)"
+  set_fact:
+    proxy_env: "{{ proxy_env | combine({item: lookup('ansible.builtin.env', item)}) }}"
+
 - name: Enroll libellum
   when: "(((libellum.force_renew is defined and libellum.force_renew) or not libellum_cert_stat.stat.exists or libellum_cert_info.expired) and (outscan.username is defined or operatorcertificate.stat.exists)) or (( outscan_enroll_skip_install is not defined or not outscan_enroll_skip_install ) and 'service-custom-' not in (ansible_facts.packages|join(' ')))"  # noqa 204
   block:
     - name: Libellum create csr
       when: not ansible_check_mode
+      environment: "{{ proxy_env }}"
       command:
         argv:
           - /usr/bin/libellum
@@ -66,6 +83,7 @@
       block:
         - name: Enroll libellum csr
           delegate_to: localhost
+          environment: "{{ proxy_env }}"
           uri:
             url: "https://{{ libellum.server }}/rest/v0/certificates"
             method: POST
@@ -96,6 +114,7 @@
           when: login_token is not defined
 
         - name: Login using outscan account  # noqa jinja[spacing]
+          environment: "{{ proxy_env }}"
           uri:
             url: "https://{{ outscan.site_basehref }}/opi/rest/auth/login"
             method: POST
@@ -125,6 +144,7 @@
 
         - name: Enroll libellum csr using outscan account
           when: not ansible_check_mode
+          environment: "{{ proxy_env }}"
           uri:
             url: "https://{{ outscan.site_basehref }}/opi/rest/enroll/services"
             method: POST
@@ -167,6 +187,7 @@
 
     - name: Register libellum certificate
       when: not ansible_check_mode
+      environment: "{{ proxy_env }}"
       command:
         argv:
           - /usr/bin/libellum
@@ -184,6 +205,7 @@
 
 - name: Renew libellum
   when: libellum_cert_stat.stat.exists
+  environment: "{{ proxy_env }}"
   command:
     argv:
       - /usr/bin/libellum

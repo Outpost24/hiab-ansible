@@ -34,6 +34,20 @@
         path: "{{ tmpdir.path }}"
         state: absent
 
+- name: Add proxy to o24 repo
+  blockinfile:
+    path: /etc/yum.repos.d/service.repo
+    block: |
+      proxy = {% if 'http' not in lookup('env', item) %}{{ item.split('_')[0] | lower }}://{% endif %}{{ lookup('env', item) }}
+  loop:
+    - HTTP_PROXY
+    - http_proxy
+    - HTTPS_PROXY
+    - https_proxy
+  when: (bootstrap is not defined or not bootstrap) and ("lookup('env', item)")
+  tags:
+    - proxy
+
 - name: Install Libellum
   when: bootstrap is not defined or not bootstrap
   package:

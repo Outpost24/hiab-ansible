@@ -34,6 +34,22 @@
   hosts: hiab
   gather_facts: false
   tasks:
+    - name: Initialize proxy_env variable
+      set_fact:
+        proxy_env: {}
+
+    - name: Lookup proxy
+      loop:
+        - HTTP_PROXY
+        - HTTPS_PROXY
+        - NO_PROXY
+        - http_proxy
+        - https_proxy
+        - no_proxy
+      when: "lookup('env', item)"
+      set_fact:
+        proxy_env: "{{ proxy_env | default({}) | combine({item: lookup('ansible.builtin.env', item)}) }}"
+
     - name: Create recipient directories  # noqa risky-file-permissions
       run_once: true
       delegate_to: localhost
@@ -46,6 +62,7 @@
       delegate_to: localhost
       become: false
       changed_when: false
+      environment: "{{ proxy_env }}"  # this does not work since the used version of opensssl doesn't support proxy. TODO: we will update libellum connect DEV-6956
       shell: |
         set -o pipefail
         openssl s_client -servername appliance -connect {{ inventory_hostname }}:443 </dev/null 2>/dev/null | sed -n -e '/BEGIN\ CERTIFICATE/,/END\ CERTIFICATE/ p' > {{ playbook_dir }}/files{{ tls_certificates_base_path }}/recipients/{{ inventory_hostname }}.crt  # noqa 204
@@ -82,3 +99,15 @@
   tags:
     - libellum
     - recipients
+
+- name: Remove proxy from o24 repo
+  hosts: dsagent
+  become: true
+  tasks:
+    - name: Remove proxy
+      blockinfile:
+        path: /etc/yum.repos.d/service.repo
+        state: absent
+  tags:
+    - update
+    - proxy
