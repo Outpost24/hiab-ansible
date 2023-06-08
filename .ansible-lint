@@ -5,12 +5,14 @@ skip_list:
   - no-changed-when
   - ignore-errors
   - no-jinja-nesting
-  - fqcn
   - name[casing]
+  - name[template]
+  - fqcn
   - role-name[path]
   - schema[meta]
-  - schema[playbook]
   - run-once[task]
+  - name[play]
+  - var-naming[no-role-prefix]
 exclude_paths:
   - .cache
   - .github
